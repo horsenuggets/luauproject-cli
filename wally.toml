@@ -1,0 +1,10 @@
+[package]
+name = "horsenuggets/luauproject-cli"
+version = "0.0.1"
+license = "MIT"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+description = "CLI tool to scaffold new Luau projects"
+
+[dependencies]
+Commandline = "horsenuggets/commandline-luau@0.0.1"
