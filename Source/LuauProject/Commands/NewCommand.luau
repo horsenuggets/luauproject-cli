@@ -10,7 +10,7 @@ local stdio = require("@lune/stdio")
 
 local Commandline = require("@packages/Commandline")
 local Command = Commandline.Command
-local Arg = Commandline.Arg
+local _Arg = Commandline.Arg
 local Flag = Commandline.Flag
 
 local TEMPLATE_REPO = "horsenuggets/luau-package-template"
@@ -63,7 +63,7 @@ local function runOrFail(command: string, args: { string }?, cwd: string?): stri
 end
 
 local function kebabCase(str: string): string
-	return str:lower():gsub("%s+", "-"):gsub("[^%w-]", "")
+	return str:lower():gsub("%s+", "-"):gsub("[^%w%-]", "")
 end
 
 local function replaceInFile(filePath: string, replacements: { [string]: string })
@@ -155,26 +155,18 @@ local NewCommand = Command.new({
 
 		-- Initialize submodules
 		print("📚 Setting up submodules...")
-		runOrFail(
-			"git",
-			{
-				"submodule",
-				"add",
-				"https://github.com/horsenuggets/claude-md-luau.git",
-				"Submodules/claude-md-luau",
-			},
-			projectPath
-		)
-		runOrFail(
-			"git",
-			{
-				"submodule",
-				"add",
-				"https://github.com/horsenuggets/luau-cicd.git",
-				"Submodules/luau-cicd",
-			},
-			projectPath
-		)
+		runOrFail("git", {
+			"submodule",
+			"add",
+			"https://github.com/horsenuggets/claude-md-luau.git",
+			"Submodules/claude-md-luau",
+		}, projectPath)
+		runOrFail("git", {
+			"submodule",
+			"add",
+			"https://github.com/horsenuggets/luau-cicd.git",
+			"Submodules/luau-cicd",
+		}, projectPath)
 
 		-- Install dependencies
 		print("📥 Installing dependencies...")
@@ -189,18 +181,15 @@ local NewCommand = Command.new({
 			print("🌐 Creating GitHub repository...")
 
 			local visibility = if isPrivate then "--private" else "--public"
-			runOrFail(
-				"gh",
-				{
-					"repo",
-					"create",
-					`{author}/{name}`,
-					visibility,
-					"--source",
-					projectPath,
-					"--push",
-				}
-			)
+			runOrFail("gh", {
+				"repo",
+				"create",
+				`{author}/{name}`,
+				visibility,
+				"--source",
+				projectPath,
+				"--push",
+			})
 
 			-- Configure repository settings
 			print("⚙️  Configuring repository settings...")
@@ -252,6 +241,8 @@ local NewCommand = Command.new({
 				"allow_deletions": false
 			}]]
 
+			local tempMainFile = "/tmp/main-protection.json"
+			fs.writeFile(tempMainFile, mainProtection)
 			runOrFail("gh", {
 				"api",
 				`repos/{author}/{name}/branches/main/protection`,
@@ -260,7 +251,7 @@ local NewCommand = Command.new({
 				"-H",
 				"Accept: application/vnd.github+json",
 				"--input",
-				"-",
+				tempMainFile,
 			})
 
 			-- Set up branch protection for release
@@ -287,6 +278,8 @@ local NewCommand = Command.new({
 				"allow_deletions": false
 			}]]
 
+			local tempReleaseFile = "/tmp/release-protection.json"
+			fs.writeFile(tempReleaseFile, releaseProtection)
 			runOrFail("gh", {
 				"api",
 				`repos/{author}/{name}/branches/release/protection`,
@@ -295,7 +288,7 @@ local NewCommand = Command.new({
 				"-H",
 				"Accept: application/vnd.github+json",
 				"--input",
-				"-",
+				tempReleaseFile,
 			})
 
 			print(`\n✅ Project created successfully!`)
