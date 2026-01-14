@@ -291,6 +291,32 @@ local NewCommand = Command.new({
 				tempReleaseFile,
 			})
 
+			-- Set up Wally auth token for publishing
+			local wallyToken = process.env.WALLY_AUTH_TOKEN
+			if wallyToken and wallyToken ~= "" then
+				print("🔑 Setting up Wally authentication...")
+				local ok, _ = run("gh", {
+					"secret",
+					"set",
+					"WALLY_AUTH_TOKEN",
+					"--body",
+					wallyToken,
+					"--repo",
+					`{author}/{name}`,
+				})
+				if ok then
+					print("   Wally token configured for publishing")
+				else
+					print(
+						"   Warning: Failed to set Wally token. Set it manually in repo settings."
+					)
+				end
+			else
+				print("\n⚠️  WALLY_AUTH_TOKEN not found in environment.")
+				print("   To enable Wally publishing, add the secret manually:")
+				print(`   gh secret set WALLY_AUTH_TOKEN --repo {author}/{name}`)
+			end
+
 			print(`\n✅ Project created successfully!`)
 			print(`\n📍 Location: {projectPath}`)
 			print(`🔗 Repository: https://github.com/{author}/{name}`)
