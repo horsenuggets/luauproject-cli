@@ -155,8 +155,26 @@ local NewCommand = Command.new({
 
 		-- Initialize submodules
 		print("📚 Setting up submodules...")
-		runOrFail("git", { "submodule", "add", "https://github.com/horsenuggets/claude-md-luau.git", "Submodules/claude-md-luau" }, projectPath)
-		runOrFail("git", { "submodule", "add", "https://github.com/horsenuggets/luau-cicd.git", "Submodules/luau-cicd" }, projectPath)
+		runOrFail(
+			"git",
+			{
+				"submodule",
+				"add",
+				"https://github.com/horsenuggets/claude-md-luau.git",
+				"Submodules/claude-md-luau",
+			},
+			projectPath
+		)
+		runOrFail(
+			"git",
+			{
+				"submodule",
+				"add",
+				"https://github.com/horsenuggets/luau-cicd.git",
+				"Submodules/luau-cicd",
+			},
+			projectPath
+		)
 
 		-- Install dependencies
 		print("📥 Installing dependencies...")
@@ -171,19 +189,38 @@ local NewCommand = Command.new({
 			print("🌐 Creating GitHub repository...")
 
 			local visibility = if isPrivate then "--private" else "--public"
-			runOrFail("gh", { "repo", "create", `{author}/{name}`, visibility, "--source", projectPath, "--push" })
+			runOrFail(
+				"gh",
+				{
+					"repo",
+					"create",
+					`{author}/{name}`,
+					visibility,
+					"--source",
+					projectPath,
+					"--push",
+				}
+			)
 
 			-- Configure repository settings
 			print("⚙️  Configuring repository settings...")
 
 			-- Set squash-only merging
 			runOrFail("gh", {
-				"api", `repos/{author}/{name}`, "-X", "PATCH",
-				"-f", "allow_squash_merge=true",
-				"-f", "allow_merge_commit=false",
-				"-f", "allow_rebase_merge=false",
-				"-f", "delete_branch_on_merge=true",
-				"-f", "allow_auto_merge=true",
+				"api",
+				`repos/{author}/{name}`,
+				"-X",
+				"PATCH",
+				"-f",
+				"allow_squash_merge=true",
+				"-f",
+				"allow_merge_commit=false",
+				"-f",
+				"allow_rebase_merge=false",
+				"-f",
+				"delete_branch_on_merge=true",
+				"-f",
+				"allow_auto_merge=true",
 			})
 
 			-- Create release branch
@@ -216,10 +253,14 @@ local NewCommand = Command.new({
 			}]]
 
 			runOrFail("gh", {
-				"api", `repos/{author}/{name}/branches/main/protection`,
-				"-X", "PUT",
-				"-H", "Accept: application/vnd.github+json",
-				"--input", "-",
+				"api",
+				`repos/{author}/{name}/branches/main/protection`,
+				"-X",
+				"PUT",
+				"-H",
+				"Accept: application/vnd.github+json",
+				"--input",
+				"-",
 			})
 
 			-- Set up branch protection for release
@@ -247,10 +288,14 @@ local NewCommand = Command.new({
 			}]]
 
 			runOrFail("gh", {
-				"api", `repos/{author}/{name}/branches/release/protection`,
-				"-X", "PUT",
-				"-H", "Accept: application/vnd.github+json",
-				"--input", "-",
+				"api",
+				`repos/{author}/{name}/branches/release/protection`,
+				"-X",
+				"PUT",
+				"-H",
+				"Accept: application/vnd.github+json",
+				"--input",
+				"-",
 			})
 
 			print(`\n✅ Project created successfully!`)
