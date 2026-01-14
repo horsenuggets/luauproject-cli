@@ -36,6 +36,7 @@ If you choose to create a GitHub repository, it will also:
 - Configure squash-only merging
 - Create a protected `release` branch
 - Set up branch protection rules for `main` and `release`
+- Set up `WALLY_AUTH_TOKEN` secret for Wally publishing (if available)
 
 ## Options
 
@@ -44,3 +45,7 @@ luauproject new --path /custom/directory
 ```
 
 - `-p, --path` - Directory to create project in (default: current directory)
+
+## Environment Variables
+
+- `WALLY_AUTH_TOKEN` - If set, this token will be automatically added as a repository secret to enable Wally publishing. Get your token from the [Wally website](https://wally.run).
