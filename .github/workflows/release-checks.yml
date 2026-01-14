@@ -78,7 +78,7 @@ jobs:
         run: wally install
 
       - name: Setup Lune typedefs
-        run: lune setup --no-update-luaurc
+        run: lune setup
 
       - name: Run static analysis
         run: luau-lsp analyze --ignore "Submodules/**" --ignore "Packages/**" --ignore "Scripts/**" --platform standard .
