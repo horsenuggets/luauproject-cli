@@ -1,7 +1,7 @@
 {
 	"name": "luauproject-cli",
 	"tree": {
-		"$path": "Source",
+		"$path": "Source/LuauprojectCli",
 		"DevPackages": {
 			"$path": "DevPackages"
 		},

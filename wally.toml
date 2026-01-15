@@ -1,12 +1,15 @@
 [package]
 name = "horsenuggets/luauproject-cli"
+description = "A CLI tool for instantiating new Luau projects."
 version = "0.0.0"
 license = "MIT"
 registry = "https://github.com/UpliftGames/wally-index"
+repository = "https://github.com/horsenuggets/luauproject-cli"
 realm = "shared"
-description = "A CLI tool for instantiating new Luau projects."
+private = true
 
 [dependencies]
+Chalk = "horsenuggets/chalk-luau@0.0.0"
 Commandline = "horsenuggets/commandline-luau@0.0.3"
 
 [dev-dependencies]
