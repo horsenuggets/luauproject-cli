@@ -5,35 +5,39 @@ A CLI tool for instantiating new Luau projects.
 ## Usage
 
 ```bash
-luauproject new
+luauproject new [flags...]
 ```
 
-This will interactively prompt you for:
-- **Project name** (kebab-case)
-- **Description**
-- **Author/GitHub username**
-- **Create GitHub repository?**
-- **Private repository?** (if creating GitHub repo)
+## Flags
 
-The tool will then:
-1. Clone the luau-package-template
-2. Initialize a fresh git repository
-3. Update project files with your details
-4. Set up git submodules (claude-md-luau, luau-cicd)
-5. Install Wally dependencies
-6. Create initial commit
+All flags are optional. Without flags, prompts interactively for project name, description,
+owner, and GitHub options.
 
-If you choose to create a GitHub repository, it will also:
-- Create the repo on GitHub (public or private)
-- Configure squash-only merging
-- Create a protected `release` branch
-- Set up branch protection rules for `main` and `release`
-- Set up `WALLY_AUTH_TOKEN` secret for Wally publishing (if available)
+| Short | Long            | If not provided   | Description                                      |
+| ----- | --------------- | ----------------- | ------------------------------------------------ |
+| `-n`  | `--name`        | Prompts           | Project name in kebab-case                       |
+| `-d`  | `--description` | Prompts           | Project description (default: "A Luau package.") |
+| `-o`  | `--owner`       | Prompts           | GitHub owner or organization                     |
+| `-p`  | `--path`        | Current directory | Directory to create project in                   |
+|       | `--github`      | Prompts           | Create a GitHub repository (skips confirmation)  |
+|       | `--private`     | Prompts           | Create a private repository (implies `--github`) |
+|       | `--nogithub`    | Prompts           | Skip GitHub repository creation                  |
 
-## Options
+## Examples
 
 ```bash
-luauproject new --path /custom/directory
-```
+# Interactive mode
+luauproject new
 
-- `-p, --path` - Directory to create project in (default: current directory)
+# Non-interactive mode (public repo)
+luauproject new -n my-project -d "A cool package." -o myusername --github
+
+# Non-interactive mode (private repo)
+luauproject new -n my-project -d "A cool package." -o myusername --private
+
+# Non-interactive mode (no GitHub repo)
+luauproject new -n my-project -d "A cool package." -o myusername --nogithub
+
+# Non-interactive with custom output directory
+luauproject new -n my-project -d "A cool package." -o myusername --nogithub -p ~/projects
+```
