@@ -13,12 +13,16 @@ local Chalk = require("@packages/Chalk")
 local fs = require("@lune/fs")
 local process = require("@lune/process")
 
-local ENTRY_POINT = "Source/LuauprojectCli/luauproject-cli.luau"
-local BUILD_DIR = "Build"
+-- Use script global to resolve paths relative to this script's location
+-- script.Parent = Scripts/, script.Parent.Parent = project root
+local PROJECT_ROOT = tostring(script.Parent.Parent)
+local BUILD_DIR = `{PROJECT_ROOT}/Build`
+local ENTRY_POINT = `{PROJECT_ROOT}/Source/LuauprojectCli/luauproject-cli.luau`
+local GENERATE_VERSION_SCRIPT = `{PROJECT_ROOT}/Scripts/GenerateVersion.luau`
 local OUTPUT_NAME = "luauproject"
 
-local function run(command: string, args: { string }): (boolean, string)
-    local result = process.exec(command, args)
+local function run(command: string, args: { string }, options: { cwd: string? }?): (boolean, string)
+    local result = process.exec(command, args, options)
     if result.ok then
         return true, result.stdout
     else
@@ -32,8 +36,8 @@ local function buildExecutable()
     print()
     print(`Building {Chalk.bold(Chalk.blueBright("luauproject"))} executable...`)
 
-    -- Generate version module
-    local versionResult = process.exec("lune", { "run", "Scripts/GenerateVersion.luau" })
+    -- Generate version module (run from project root so rokit shim finds manifest)
+    local versionResult = process.exec("lune", { "run", GENERATE_VERSION_SCRIPT }, { cwd = PROJECT_ROOT })
     if not versionResult.ok then
         print(Chalk.red("Failed to generate version module."))
         print(versionResult.stderr)
@@ -50,6 +54,15 @@ local function buildExecutable()
         fs.writeDir(BUILD_DIR)
     end
 
+    -- Remove existing binary to avoid corruption issues
+    local outputPath = `{BUILD_DIR}/{OUTPUT_NAME}`
+    if fs.isFile(outputPath) then
+        fs.removeFile(outputPath)
+    end
+    if fs.isFile(`{outputPath}.exe`) then
+        fs.removeFile(`{outputPath}.exe`)
+    end
+
     -- Strip shebang for building (lune build doesn't support shebangs).
     -- Temp file goes in same directory so relative requires resolve correctly.
     local entryContent = fs.readFile(ENTRY_POINT)
@@ -58,7 +71,6 @@ local function buildExecutable()
     local strippedContent = entryContent:gsub("^#![^\n]*\n", "")
     fs.writeFile(tempEntryPoint, strippedContent)
 
-    local outputPath = `{BUILD_DIR}/{OUTPUT_NAME}`
     local args = { "build", tempEntryPoint, "--output", outputPath }
 
     if target then
@@ -71,7 +83,7 @@ local function buildExecutable()
 
     print(`Entry point is {Chalk.dim(ENTRY_POINT)}.`)
 
-    local ok, output = run("lune", args)
+    local ok, output = run("lune", args, { cwd = PROJECT_ROOT })
 
     -- Clean up temporary entry point
     if fs.isFile(tempEntryPoint) then
