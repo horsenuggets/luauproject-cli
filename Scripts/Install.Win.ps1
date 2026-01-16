@@ -23,13 +23,13 @@ Function Get-ReleaseInfo {
         return $response
     }
     catch {
-        throw "Failed to fetch release info: $_"
+        throw "Failed to fetch release info. $_"
     }
 }
 
 try {
     if ($env:GITHUB_PAT) {
-        Write-Host "NOTE: Using provided GITHUB_PAT for authentication"
+        Write-Host "Using the provided GITHUB_PAT for authentication."
     }
 
     # Determine architecture
@@ -40,17 +40,17 @@ try {
             "x86_64"
         }
     } else {
-        Write-Error "32-bit systems are not supported"
+        Write-Error "32-bit systems are not supported."
         exit 1
     }
 
     # Determine version to download
     $version = $args[0]
     if ($version) {
-        Write-Host "`n[1 / 3] Looking for $PROGRAM_NAME release with tag '$version'"
+        Write-Host "`n[1 / 3] Looking for $PROGRAM_NAME release with tag `"$version`"."
         $apiUrl = "https://api.github.com/repos/$REPOSITORY/releases/tags/$version"
     } else {
-        Write-Host "`n[1 / 3] Looking for latest $PROGRAM_NAME release"
+        Write-Host "`n[1 / 3] Looking for the latest $PROGRAM_NAME release."
         $apiUrl = "https://api.github.com/repos/$REPOSITORY/releases/latest"
     }
 
@@ -61,11 +61,11 @@ try {
     $asset = $releaseInfo.assets | Where-Object { $_.name -eq $binaryName } | Select-Object -First 1
 
     if (-not $asset) {
-        throw "Could not find binary '$binaryName' in the release"
+        throw "Could not find the binary `"$binaryName`" in the release."
     }
 
     $downloadUrl = $asset.browser_download_url
-    Write-Host "[2 / 3] Downloading '$binaryName'"
+    Write-Host "[2 / 3] Downloading `"$binaryName`"."
 
     # Download the binary
     $tempFile = "$PROGRAM_NAME.exe"
@@ -73,20 +73,20 @@ try {
         Invoke-WebRequest $downloadUrl -OutFile $tempFile -ErrorAction Stop
     }
     catch {
-        throw "Failed to download from $downloadUrl`: $_"
+        throw "Failed to download from $downloadUrl. $_"
     }
 
     if (-not (Test-Path $tempFile)) {
-        throw "Download failed - file not found"
+        throw "The download failed because the file was not found."
     }
 
     # Run self-install
     try {
-        Write-Host "[3 / 3] Running $PROGRAM_NAME installation`n"
+        Write-Host "[3 / 3] Running $PROGRAM_NAME installation.`n"
         Start-Process -FilePath ".\$tempFile" -ArgumentList "install" -Wait -NoNewWindow
     }
     catch {
-        throw "Failed to run install: $_"
+        throw "Failed to run the install command. $_"
     }
 
     # Cleanup
@@ -94,11 +94,11 @@ try {
         Remove-Item $tempFile -ErrorAction SilentlyContinue
     }
     catch {
-        Write-Warning "Cleanup failed: $_"
+        Write-Warning "Cleanup failed. $_"
     }
 }
 catch {
-    Write-Error "Installation failed: $_"
+    Write-Error "Installation failed. $_"
     exit 1
 }
 finally {
