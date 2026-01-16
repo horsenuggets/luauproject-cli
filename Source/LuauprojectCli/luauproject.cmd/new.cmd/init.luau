@@ -181,7 +181,7 @@ local function printWallyTokenWarning(owner: string, name: string)
     print()
     print(Chalk.yellow("WALLY_AUTH_TOKEN not found in environment."))
     print(Chalk.dim("To enable Wally publishing, add the secret manually:"))
-    print(Chalk.dim(`  gh secret set WALLY_AUTH_TOKEN --repo {owner}/{name}`))
+    print(Chalk.dim(`> gh secret set WALLY_AUTH_TOKEN --repo {owner}/{name}`))
 end
 
 ------------------------------------------------------------------------------------------
@@ -322,6 +322,7 @@ end
 local function updateReadme(config: ProjectConfig)
     replaceInFile(`{config.ProjectPath}/README.md`, {
         { "# luau%-package%-template", `# {config.Name}` },
+        { "A template for creating Luau packages%.", config.Description },
     })
 end
 
