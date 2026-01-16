@@ -10,13 +10,14 @@ prompts and command-line flags.
 local Chalk = require("@packages/Chalk")
 local Command = require("@packages/Commandline").Command
 local Flag = require("@packages/Commandline").Flag
-local GitHubHelpers = require("@self/Helpers/GitHubHelpers")
-local PromptHelpers = require("@self/Helpers/PromptHelpers")
-local ShellHelpers = require("@self/Helpers/ShellHelpers")
-local StringHelpers = require("@self/Helpers/StringHelpers")
-local WallyHelpers = require("@self/Helpers/WallyHelpers")
+local GitHubHelpers = require("@luauprojectcli/Helpers/GitHubHelpers")
+local PromptHelpers = require("@luauprojectcli/Helpers/PromptHelpers")
+local ShellHelpers = require("@luauprojectcli/Helpers/ShellHelpers")
+local StringHelpers = require("@luauprojectcli/Helpers/StringHelpers")
+local WallyHelpers = require("@luauprojectcli/Helpers/WallyHelpers")
 local fs = require("@lune/fs")
 local process = require("@lune/process")
+local serde = require("@lune/serde")
 local stdio = require("@lune/stdio")
 
 ------------------------------------------------------------------------------------------
@@ -24,6 +25,14 @@ local stdio = require("@lune/stdio")
 ------------------------------------------------------------------------------------------
 
 local TEMPLATE_REPO = "horsenuggets/luau-package-template"
+
+-- These alias names are reserved in .luaurc and cannot be used as project names
+local RESERVED_ALIASES = {
+    "devpackages",
+    "lune",
+    "packages",
+    "tests",
+}
 
 ------------------------------------------------------------------------------------------
 -- Types
@@ -42,6 +51,19 @@ type ProjectConfig = {
 ------------------------------------------------------------------------------------------
 -- Utility Functions
 ------------------------------------------------------------------------------------------
+
+local function toAliasName(kebabName: string): string
+    return kebabName:gsub("-", "")
+end
+
+local function isReservedAlias(aliasName: string): boolean
+    for _, reserved in RESERVED_ALIASES do
+        if aliasName == reserved then
+            return true
+        end
+    end
+    return false
+end
 
 local function replaceInFile(filePath: string, replacements: { { string } })
     if not fs.isFile(filePath) then
@@ -100,6 +122,11 @@ local function getProjectName(flags: any): string
             stdio.ewrite(Chalk.red("Project name is empty after correction.\n"))
             process.exit(1)
         end
+        local aliasName = toAliasName(corrected)
+        if isReservedAlias(aliasName) then
+            stdio.ewrite(Chalk.red(`Project name "{corrected}" conflicts with reserved alias "{aliasName}".\n`))
+            process.exit(1)
+        end
         if corrected ~= flags.name.Value then
             print(`Using "{Chalk.bold(corrected)}" as the project name.`)
         end
@@ -116,6 +143,16 @@ local function getProjectName(flags: any): string
         local corrected = StringHelpers.toKebabCase(input)
         if corrected == "" then
             print(Chalk.yellow("Project name is empty after correction. Please try again."))
+            continue
+        end
+
+        local aliasName = toAliasName(corrected)
+        if isReservedAlias(aliasName) then
+            print(
+                Chalk.yellow(
+                    `Project name "{corrected}" conflicts with reserved alias "{aliasName}". Please try again.`
+                )
+            )
             continue
         end
 
@@ -166,7 +203,7 @@ local function shouldCreateGithubRepo(flags: any): boolean
     if flags.nogithub.Value then
         return false
     end
-    if flags.private.Value then
+    if flags.github.Value or flags.private.Value then
         return true
     end
     return PromptHelpers.promptConfirm("Create GitHub repository?", true)
@@ -179,14 +216,15 @@ local function shouldBePrivate(flags: any, createGithubRepo: boolean): boolean
     if flags.private.Value then
         return true
     end
-    if flags.nogithub.Value then
+    if flags.nogithub.Value or flags.github.Value then
         return false
     end
     return PromptHelpers.promptConfirm("Private repository?", false)
 end
 
 local function getBasePath(flags: any): string
-    local basePath = flags.path.Value or process.cwd
+    -- LUAUPROJECT_CWD is set by the wrapper script when running from a different directory
+    local basePath = flags.path.Value or process.env.LUAUPROJECT_CWD or process.cwd
     return basePath:gsub("/$", "")
 end
 
@@ -286,8 +324,60 @@ local function createVersionFiles(config: ProjectConfig)
     fs.writeFile(`{config.ProjectPath}/CHANGELOG.md`, "# Changelog\n\n## 0.0.1\n- Initial release\n")
 end
 
+local function updateLuaurc(config: ProjectConfig)
+    local luaurcPath = `{config.ProjectPath}/.luaurc`
+    if not fs.isFile(luaurcPath) then
+        return
+    end
+
+    local content = fs.readFile(luaurcPath)
+    local luaurc = serde.decode("json", content)
+
+    -- Update aliases: remove template alias and add project alias
+    local aliases = luaurc.aliases or {}
+    aliases.luaupackagetemplate = nil
+    local aliasName = toAliasName(config.Name)
+    aliases[aliasName] = `./Source/{config.PascalName}/`
+
+    -- Get sorted alias keys
+    local aliasKeys = {}
+    for key in aliases do
+        table.insert(aliasKeys, key)
+    end
+    table.sort(aliasKeys)
+
+    -- Get sorted global keys
+    local globals = luaurc.globals or {}
+    table.sort(globals)
+
+    -- Build JSON manually with 4-space indentation and sorted keys
+    local lines = {
+        "{",
+        '    "aliases": {',
+    }
+
+    for i, key in aliasKeys do
+        local comma = if i < #aliasKeys then "," else ""
+        table.insert(lines, `        "{key}": "{aliases[key]}"{comma}`)
+    end
+
+    table.insert(lines, "    },")
+    table.insert(lines, '    "globals": [')
+
+    for i, global in globals do
+        local comma = if i < #globals then "," else ""
+        table.insert(lines, `        "{global}"{comma}`)
+    end
+
+    table.insert(lines, "    ]")
+    table.insert(lines, "}")
+
+    fs.writeFile(luaurcPath, table.concat(lines, "\n") .. "\n")
+end
+
 local function updateConfigFiles(config: ProjectConfig)
     printStep("Updating project configuration files...")
+    updateLuaurc(config)
     updateWallyToml(config)
     updateProjectJson(config)
     updateRootInit(config)
@@ -325,11 +415,19 @@ local function setupSubmodules(config: ProjectConfig)
 end
 
 local function installTools(config: ProjectConfig)
+    if process.env.LUAUPROJECT_SKIP_INSTALL then
+        printStep("Skipping Rokit tools installation (LUAUPROJECT_SKIP_INSTALL set)...")
+        return
+    end
     printStep("Installing Rokit tools...")
     ShellHelpers.runOrFail("rokit", { "install" }, config.ProjectPath)
 end
 
 local function installDependencies(config: ProjectConfig)
+    if process.env.LUAUPROJECT_SKIP_INSTALL then
+        printStep("Skipping Wally dependencies installation (LUAUPROJECT_SKIP_INSTALL set)...")
+        return
+    end
     printStep("Installing Wally dependencies...")
     ShellHelpers.runOrFail("wally", { "install" }, config.ProjectPath)
 end
@@ -555,6 +653,10 @@ return Command.new({
             Shorthand = "o",
             Description = "GitHub owner or organization.",
             Type = "string",
+        }),
+        Flag.new({
+            Name = "github",
+            Description = "Create a GitHub repository (skips confirmation prompt).",
         }),
         Flag.new({
             Name = "private",
