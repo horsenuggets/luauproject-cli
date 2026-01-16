@@ -1,10 +1,16 @@
 # Changelog
 
-## 0.0.2
+## 0.0.3
+- Add self-install command with cross-platform support (Windows, macOS, Linux)
+- Add one-liner install scripts for quick installation from GitHub releases
+- Add CI workflow for testing installation on all platforms
+- Add Copilot code review ruleset to new project setup
+- Simplify branch protection rules (remove PR review requirements)
+- Update README with installation instructions
 
+## 0.0.2
 - Add multi-platform builds to release workflow (linux, macos, windows for x86_64 and aarch64)
 - Separate production and development project configs
 
 ## 0.0.1
-
 - Initial release

@@ -503,11 +503,7 @@ local function getMainBranchProtectionJson(): string
 			]
 		},
 		"enforce_admins": true,
-		"required_pull_request_reviews": {
-			"dismiss_stale_reviews": true,
-			"require_code_owner_reviews": false,
-			"required_approving_review_count": 1
-		},
+		"required_pull_request_reviews": null,
 		"restrictions": null,
 		"allow_force_pushes": false,
 		"allow_deletions": false
@@ -528,14 +524,33 @@ local function getReleaseBranchProtectionJson(): string
 			]
 		},
 		"enforce_admins": true,
-		"required_pull_request_reviews": {
-			"dismiss_stale_reviews": true,
-			"require_code_owner_reviews": false,
-			"required_approving_review_count": 1
-		},
+		"required_pull_request_reviews": null,
 		"restrictions": null,
 		"allow_force_pushes": false,
 		"allow_deletions": false
+	}]]
+end
+
+local function getCopilotCodeReviewRulesetJson(): string
+    return [[{
+		"name": "Copilot Code Review",
+		"target": "branch",
+		"enforcement": "active",
+		"conditions": {
+			"ref_name": {
+				"include": ["refs/heads/main", "refs/heads/release"],
+				"exclude": []
+			}
+		},
+		"rules": [
+			{
+				"type": "copilot_code_review",
+				"parameters": {
+					"review_draft_pull_requests": false,
+					"review_on_push": true
+				}
+			}
+		]
 	}]]
 end
 
@@ -565,6 +580,30 @@ local function setupBranchProtection(config: ProjectConfig)
 
     if not mainOk or not releaseOk then
         print(Chalk.yellow("Failed to set branch protection (requires GitHub Pro for private repos)."))
+    end
+end
+
+local function setupCopilotCodeReview(config: ProjectConfig)
+    printStep("Setting up Copilot code review...")
+
+    local tempFile = "/tmp/copilot-ruleset.json"
+    fs.writeFile(tempFile, getCopilotCodeReviewRulesetJson())
+
+    local ok, _ = ShellHelpers.run("gh", {
+        "api",
+        `repos/{config.Owner}/{config.Name}/rulesets`,
+        "-X",
+        "POST",
+        "-H",
+        "Accept: application/vnd.github+json",
+        "--input",
+        tempFile,
+    })
+
+    if ok then
+        print(Chalk.dim("Copilot code review enabled for all PRs..."))
+    else
+        print(Chalk.yellow("Failed to set up Copilot code review (requires Copilot subscription)."))
     end
 end
 
@@ -600,6 +639,7 @@ local function setupGithubRepository(config: ProjectConfig)
     configureRepoSettings(config)
     createReleaseBranch(config)
     setupBranchProtection(config)
+    setupCopilotCodeReview(config)
     setupWallyToken(config)
 end
 
