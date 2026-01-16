@@ -4,10 +4,7 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - 'Source/**/install.cmd/**'
-      - 'scripts/**'
-      - '.github/workflows/test-install.yml'
+      - release
   workflow_dispatch:
 
 jobs:

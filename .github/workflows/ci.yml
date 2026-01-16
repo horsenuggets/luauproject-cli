@@ -63,3 +63,24 @@ jobs:
 
       - name: Run static analysis
         run: echo "Skipping static analysis - CLI tool uses Lune APIs that don't have full typedef support"
+
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Rokit
+        uses: CompeyDev/setup-rokit@v0.1.2
+
+      - name: Install dependencies
+        run: wally install
+
+      - name: Build executable
+        run: lune run Scripts/BuildExecutable.luau linux-x86_64
+
+      - name: Run unit tests
+        run: lune run Scripts/RunTests.luau --no-docker
