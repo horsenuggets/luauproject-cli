@@ -7,12 +7,12 @@ prompts and command-line flags.
 
 ]]
 
+local Chalk = require("@packages/Chalk")
+local Commandline = require("@packages/Commandline")
+local Helpers = require("../Helpers")
 local fs = require("@lune/fs")
 local process = require("@lune/process")
 local stdio = require("@lune/stdio")
-
-local Chalk = require("@packages/Chalk")
-local Commandline = require("@packages/Commandline")
 local Command = Commandline.Command
 local Flag = Commandline.Flag
 
@@ -39,104 +39,6 @@ type ProjectConfig = {
 ------------------------------------------------------------------------------------------
 -- Utility Functions
 ------------------------------------------------------------------------------------------
-
-local function prompt(message: string, default: string?): string
-    local displayMessage = message
-    if default then
-        displayMessage = `{message} [{Chalk.dim(default)}]`
-    end
-
-    local result = stdio.prompt("text", displayMessage)
-    if result == "" and default then
-        return default
-    end
-    return result
-end
-
-local function promptConfirm(message: string, default: boolean?): boolean
-    local defaultStr = if default == true then "Y/n" elseif default == false then "y/N" else "y/n"
-    local result = stdio.prompt("text", `{message} ({Chalk.dim(defaultStr)})`)
-
-    if result == "" and default ~= nil then
-        return default
-    end
-
-    return result:lower() == "y" or result:lower() == "yes"
-end
-
-local function run(command: string, args: { string }?, cwd: string?): (boolean, string)
-    local result = process.exec(command, args or {}, {
-        cwd = cwd,
-    })
-
-    if result.ok then
-        return true, result.stdout
-    else
-        return false, result.stderr
-    end
-end
-
-local function runOrFail(command: string, args: { string }?, cwd: string?): string
-    local ok, output = run(command, args, cwd)
-    if not ok then
-        stdio.ewrite(Chalk.red(`Error running command: {command}\n`))
-        stdio.ewrite(`{output}\n`)
-        process.exit(1)
-    end
-    return output
-end
-
-local function toKebabCase(str: string): string
-    return str:lower():gsub("%s+", "-"):gsub("[^%w%-]", "")
-end
-
-local function toPascalCase(kebab: string): string
-    return kebab:gsub("^%l", string.upper):gsub("%-(%l)", function(c)
-        return c:upper()
-    end)
-end
-
-local function getGitHubUsername(): string?
-    local result = process.exec("gh", { "api", "user", "--jq", ".login" })
-    if result.ok then
-        local username = result.stdout:gsub("%s+$", "")
-        if username ~= "" then
-            return username
-        end
-    end
-    return nil
-end
-
-local function getGitHubOrganizations(): { string }
-    local result = process.exec("gh", { "api", "user/orgs", "--jq", ".[].login" })
-    if result.ok then
-        local orgs = {}
-        for org in result.stdout:gmatch("[^\n]+") do
-            local trimmed = org:gsub("%s+$", "")
-            if trimmed ~= "" then
-                table.insert(orgs, trimmed)
-            end
-        end
-        return orgs
-    end
-    return {}
-end
-
-local function getAvailableOwners(): { string }
-    local owners = {}
-
-    local username = getGitHubUsername()
-    if username then
-        table.insert(owners, username)
-    end
-
-    local orgs = getGitHubOrganizations()
-    for _, org in ipairs(orgs) do
-        table.insert(owners, org)
-    end
-
-    return owners
-end
 
 local function replaceInFile(filePath: string, replacements: { { string } })
     if not fs.isFile(filePath) then
@@ -190,7 +92,7 @@ end
 
 local function getProjectName(flags: any): string
     if flags.name.Value and flags.name.Value ~= "" then
-        local corrected = toKebabCase(flags.name.Value)
+        local corrected = Helpers.strings.toKebabCase(flags.name.Value)
         if corrected == "" then
             stdio.ewrite(Chalk.red("Project name is empty after correction.\n"))
             process.exit(1)
@@ -202,13 +104,13 @@ local function getProjectName(flags: any): string
     end
 
     while true do
-        local input = prompt("Project name (kebab-case)")
+        local input = Helpers.prompts.prompt("Project name (kebab-case)")
         if input == "" then
             stdio.ewrite(Chalk.red("Project name is required.\n"))
             process.exit(1)
         end
 
-        local corrected = toKebabCase(input)
+        local corrected = Helpers.strings.toKebabCase(input)
         if corrected == "" then
             print(Chalk.yellow("Project name is empty after correction. Please try again."))
             continue
@@ -226,7 +128,7 @@ local function getDescription(flags: any): string
     if flags.description.Value and flags.description.Value ~= "" then
         return flags.description.Value
     end
-    return prompt("Description", "A Luau package.")
+    return Helpers.prompts.prompt("Description", "A Luau package.")
 end
 
 local function getOwner(flags: any): string
@@ -234,17 +136,17 @@ local function getOwner(flags: any): string
         return flags.owner.Value
     end
 
-    local owners = getAvailableOwners()
+    local owners = Helpers.github.getAvailableOwners()
 
     if #owners == 0 then
-        local result = prompt("GitHub owner or organization")
+        local result = Helpers.prompts.prompt("GitHub owner or organization")
         if result == "" then
             stdio.ewrite(Chalk.red("GitHub owner is required.\n"))
             process.exit(1)
         end
         return result
     elseif #owners == 1 then
-        return prompt("GitHub owner or organization", owners[1])
+        return Helpers.prompts.prompt("GitHub owner or organization", owners[1])
     end
 
     local index = stdio.prompt("select", "GitHub owner or organization", owners)
@@ -264,7 +166,7 @@ local function shouldCreateGithubRepo(flags: any): boolean
     if flags.private.Value then
         return true
     end
-    return promptConfirm("Create GitHub repository?", true)
+    return Helpers.prompts.promptConfirm("Create GitHub repository?", true)
 end
 
 local function shouldBePrivate(flags: any, createGithubRepo: boolean): boolean
@@ -277,7 +179,7 @@ local function shouldBePrivate(flags: any, createGithubRepo: boolean): boolean
     if flags.nogithub.Value then
         return false
     end
-    return promptConfirm("Private repository?", false)
+    return Helpers.prompts.promptConfirm("Private repository?", false)
 end
 
 local function getBasePath(flags: any): string
@@ -295,7 +197,7 @@ local function gatherProjectConfig(flags: any): ProjectConfig
 
     return {
         Name = name,
-        PascalName = toPascalCase(name),
+        PascalName = Helpers.strings.toPascalCase(name),
         Description = description,
         Owner = owner,
         ProjectPath = `{basePath}/{name}`,
@@ -310,13 +212,13 @@ end
 
 local function cloneTemplate(projectPath: string)
     printStep("Cloning template repository...")
-    runOrFail("gh", { "repo", "clone", TEMPLATE_REPO, projectPath, "--", "--depth=1" })
+    Helpers.shell.runOrFail("gh", { "repo", "clone", TEMPLATE_REPO, projectPath, "--", "--depth=1" })
     fs.removeDir(`{projectPath}/.git`)
 end
 
 local function initializeGitRepo(projectPath: string)
     printStep("Initializing git repository...")
-    runOrFail("git", { "init" }, projectPath)
+    Helpers.shell.runOrFail("git", { "init" }, projectPath)
 end
 
 local function updateWallyToml(config: ProjectConfig)
@@ -404,14 +306,14 @@ local function setupSubmodules(config: ProjectConfig)
     printStep("Setting up git submodules...")
     removeEmptySubmodules(config)
 
-    runOrFail("git", {
+    Helpers.shell.runOrFail("git", {
         "submodule",
         "add",
         "https://github.com/horsenuggets/claude-md-luau.git",
         "Submodules/claude-md-luau",
     }, config.ProjectPath)
 
-    runOrFail("git", {
+    Helpers.shell.runOrFail("git", {
         "submodule",
         "add",
         "https://github.com/horsenuggets/luau-cicd.git",
@@ -419,15 +321,20 @@ local function setupSubmodules(config: ProjectConfig)
     }, config.ProjectPath)
 end
 
+local function installTools(config: ProjectConfig)
+    printStep("Installing Rokit tools...")
+    Helpers.shell.runOrFail("rokit", { "install" }, config.ProjectPath)
+end
+
 local function installDependencies(config: ProjectConfig)
     printStep("Installing Wally dependencies...")
-    runOrFail("wally", { "install" }, config.ProjectPath)
+    Helpers.shell.runOrFail("wally", { "install" }, config.ProjectPath)
 end
 
 local function createInitialCommit(config: ProjectConfig)
     printStep("Creating initial commit...")
-    runOrFail("git", { "add", "-A" }, config.ProjectPath)
-    runOrFail("git", { "commit", "-m", "Initial commit from luauproject-cli" }, config.ProjectPath)
+    Helpers.shell.runOrFail("git", { "add", "-A" }, config.ProjectPath)
+    Helpers.shell.runOrFail("git", { "commit", "-m", "Initial commit from luauproject-cli" }, config.ProjectPath)
 end
 
 ------------------------------------------------------------------------------------------
@@ -438,7 +345,7 @@ local function createGithubRepository(config: ProjectConfig)
     printStep("Creating GitHub repository...")
 
     local visibility = if config.IsPrivate then "--private" else "--public"
-    runOrFail("gh", {
+    Helpers.shell.runOrFail("gh", {
         "repo",
         "create",
         `{config.Owner}/{config.Name}`,
@@ -452,7 +359,7 @@ end
 local function configureRepoSettings(config: ProjectConfig)
     printStep("Configuring repository settings...")
 
-    runOrFail("gh", {
+    Helpers.shell.runOrFail("gh", {
         "api",
         `repos/{config.Owner}/{config.Name}`,
         "-X",
@@ -478,9 +385,9 @@ end
 
 local function createReleaseBranch(config: ProjectConfig)
     printStep("Creating release branch...")
-    runOrFail("git", { "checkout", "-b", "release" }, config.ProjectPath)
-    runOrFail("git", { "push", "-u", "origin", "release" }, config.ProjectPath)
-    runOrFail("git", { "checkout", "main" }, config.ProjectPath)
+    Helpers.shell.runOrFail("git", { "checkout", "-b", "release" }, config.ProjectPath)
+    Helpers.shell.runOrFail("git", { "push", "-u", "origin", "release" }, config.ProjectPath)
+    Helpers.shell.runOrFail("git", { "checkout", "main" }, config.ProjectPath)
 end
 
 local function getMainBranchProtectionJson(): string
@@ -535,7 +442,7 @@ local function applyBranchProtection(owner: string, name: string, branch: string
     local tempFile = `/tmp/{branch}-protection.json`
     fs.writeFile(tempFile, protectionJson)
 
-    local ok, _ = run("gh", {
+    local ok, _ = Helpers.shell.run("gh", {
         "api",
         `repos/{owner}/{name}/branches/{branch}/protection`,
         "-X",
@@ -561,16 +468,16 @@ local function setupBranchProtection(config: ProjectConfig)
 end
 
 local function setupWallyToken(config: ProjectConfig)
-    local wallyToken = process.env.WALLY_AUTH_TOKEN
+    local wallyToken = Helpers.wally.getAuthToken()
 
-    if not wallyToken or wallyToken == "" then
+    if not wallyToken then
         printWallyTokenWarning(config.Owner, config.Name)
         return
     end
 
     printStep("Setting up Wally authentication token...")
 
-    local ok, _ = run("gh", {
+    local ok, _ = Helpers.shell.run("gh", {
         "secret",
         "set",
         "WALLY_AUTH_TOKEN",
@@ -604,6 +511,7 @@ local function setupLocalProject(config: ProjectConfig)
     initializeGitRepo(config.ProjectPath)
     updateConfigFiles(config)
     setupSubmodules(config)
+    installTools(config)
     installDependencies(config)
     createInitialCommit(config)
 end
@@ -661,6 +569,7 @@ return Command.new({
         }),
     },
     Impl = function(_args, flags)
+        Helpers.github.ensureInstalled()
         printHeader()
         local config = gatherProjectConfig(flags)
         createProject(config)
