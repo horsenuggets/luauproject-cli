@@ -1,8 +1,10 @@
 {
     "aliases": {
         "devpackages": "./DevPackages/",
-        "lune": "~/.lune/.typedefs/0.10.4-horse.1.0/",
-        "packages": "./Packages/"
+        "luauprojectcli": "./Source/LuauprojectCli/",
+        "lune": "~/.lune/.typedefs/0.10.4-horse.3.0/",
+        "packages": "./Packages/",
+        "tests": "./Tests/"
     },
     "globals": [
         "afterAll",
