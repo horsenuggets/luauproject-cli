@@ -377,8 +377,8 @@ local function renameWorkspaceFile(config: ProjectConfig)
 end
 
 local function createVersionFiles(config: ProjectConfig)
-    fs.writeFile(`{config.ProjectPath}/VERSION`, "0.0.1\n")
-    fs.writeFile(`{config.ProjectPath}/CHANGELOG.md`, "# Changelog\n\n## 0.0.1\n\n- Initial release\n")
+    fs.writeFile(`{config.ProjectPath}/VERSION`, "0.0.0\n")
+    fs.writeFile(`{config.ProjectPath}/CHANGELOG.md`, "# Changelog\n\n## 0.0.1\n- Initial release\n")
 end
 
 local function updateConfigFiles(config: ProjectConfig)
