@@ -1,12 +1,6 @@
 {
-	"name": "luauproject-cli",
-	"tree": {
-		"$path": "Source/LuauprojectCli",
-		"DevPackages": {
-			"$path": "DevPackages"
-		},
-		"Packages": {
-			"$path": "Packages"
-		}
-	}
+    "name": "luauproject-cli",
+    "tree": {
+        "$path": "Source/LuauprojectCli"
+    }
 }
