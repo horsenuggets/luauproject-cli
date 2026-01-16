@@ -190,15 +190,36 @@ end
 
 local function getProjectName(flags: any): string
     if flags.name.Value and flags.name.Value ~= "" then
-        return toKebabCase(flags.name.Value)
+        local corrected = toKebabCase(flags.name.Value)
+        if corrected == "" then
+            stdio.ewrite(Chalk.red("Project name is empty after correction.\n"))
+            process.exit(1)
+        end
+        if corrected ~= flags.name.Value then
+            print(`Using "{Chalk.bold(corrected)}" as the project name.`)
+        end
+        return corrected
     end
 
-    local input = prompt("Project name (kebab-case)")
-    if input == "" then
-        stdio.ewrite(Chalk.red("Project name is required.\n"))
-        process.exit(1)
+    while true do
+        local input = prompt("Project name (kebab-case)")
+        if input == "" then
+            stdio.ewrite(Chalk.red("Project name is required.\n"))
+            process.exit(1)
+        end
+
+        local corrected = toKebabCase(input)
+        if corrected == "" then
+            print(Chalk.yellow("Project name is empty after correction. Please try again."))
+            continue
+        end
+
+        if corrected ~= input then
+            print(`Using "{Chalk.bold(corrected)}" as the project name.`)
+        end
+
+        return corrected
     end
-    return toKebabCase(input)
 end
 
 local function getDescription(flags: any): string
