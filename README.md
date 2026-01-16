@@ -2,14 +2,6 @@
 
 A CLI tool for instantiating new Luau projects.
 
-## Installation
-
-Requires [Rokit](https://github.com/rojo-rbx/rokit) to be installed.
-
-```bash
-rokit add horsenuggets/luauproject-cli
-```
-
 ## Usage
 
 ```bash
@@ -45,7 +37,3 @@ luauproject new --path /custom/directory
 ```
 
 - `-p, --path` - Directory to create project in (default: current directory)
-
-## Environment Variables
-
-- `WALLY_AUTH_TOKEN` - If set, this token will be automatically added as a repository secret to enable Wally publishing. Get your token from the [Wally website](https://wally.run).
