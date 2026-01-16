@@ -319,7 +319,7 @@ end
 
 return Command.new({
     Name = "install",
-    Description = "Install luauproject CLI to ~/.luauproject-cli/bin and add to PATH",
+    Description = "Install luauproject CLI to ~/.luauproject-cli/bin and add to PATH.",
     Impl = function()
         install()
     end,

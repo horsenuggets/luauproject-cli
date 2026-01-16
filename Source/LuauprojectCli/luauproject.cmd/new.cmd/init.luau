@@ -674,7 +674,7 @@ end
 
 return Command.new({
     Name = "new",
-    Description = "Create a new Luau project from template",
+    Description = "Create a new Luau project from template.",
     Flags = {
         Flag.new({
             Name = "name",
