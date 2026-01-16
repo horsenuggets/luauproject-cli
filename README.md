@@ -2,6 +2,27 @@
 
 A CLI tool for instantiating new Luau projects.
 
+## Installation
+
+### Quick Install
+
+**macOS / Linux:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/horsenuggets/luauproject-cli/main/Scripts/Install.Unix.sh | bash
+```
+
+**Windows (PowerShell):**
+
+```powershell
+iwr https://raw.githubusercontent.com/horsenuggets/luauproject-cli/main/Scripts/Install.Win.ps1 -useb | iex
+```
+
+### Manual Install
+
+1. Download the appropriate binary from the [releases page](https://github.com/horsenuggets/luauproject-cli/releases)
+2. Run `luauproject install` to install to `~/.luauproject-cli/bin` and add to PATH
+
 ## Usage
 
 ```bash

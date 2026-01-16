@@ -1,0 +1,92 @@
+name: Test install command
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'Source/**/install.cmd/**'
+      - 'scripts/**'
+      - '.github/workflows/test-install.yml'
+  workflow_dispatch:
+
+jobs:
+  test-install:
+    name: Test install on ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            runner: ubuntu-latest
+            target: linux-x86_64
+            install_dir: ~/.luauproject-cli/bin
+            executable: luauproject
+          - os: macos
+            runner: macos-latest
+            target: macos-aarch64
+            install_dir: ~/.luauproject-cli/bin
+            executable: luauproject
+          - os: windows
+            runner: windows-latest
+            target: windows-x86_64
+            install_dir: $env:USERPROFILE\.luauproject-cli\bin
+            executable: luauproject.exe
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Rokit
+        uses: CompeyDev/setup-rokit@v0.1.2
+
+      - name: Install dependencies
+        run: wally install
+
+      - name: Build executable
+        run: lune run Scripts/BuildExecutable.luau ${{ matrix.target }}
+
+      - name: Test install command (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          chmod +x Build/luauproject
+          Build/luauproject install
+
+          # Verify installation
+          if [ ! -f "$HOME/.luauproject-cli/bin/luauproject" ]; then
+            echo "ERROR: Executable not found at expected location"
+            exit 1
+          fi
+
+          echo "Installation successful!"
+          ls -la "$HOME/.luauproject-cli/bin/"
+
+      - name: Test install command (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          .\Build\luauproject.exe install
+
+          # Verify installation
+          $installPath = "$env:USERPROFILE\.luauproject-cli\bin\luauproject.exe"
+          if (-not (Test-Path $installPath)) {
+            Write-Error "Executable not found at expected location"
+            exit 1
+          }
+
+          Write-Host "Installation successful!"
+          Get-ChildItem "$env:USERPROFILE\.luauproject-cli\bin\"
+
+      - name: Verify installed executable runs (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          "$HOME/.luauproject-cli/bin/luauproject" --help
+
+      - name: Verify installed executable runs (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          & "$env:USERPROFILE\.luauproject-cli\bin\luauproject.exe" --help
