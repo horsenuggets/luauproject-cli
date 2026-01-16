@@ -67,7 +67,7 @@ local function getWindowsUserPath(): string?
         "HKCU\\Environment",
         "/v",
         "Path",
-    }, { stdio = "pipe" })
+    })
 
     if not result.ok then
         return nil
@@ -112,7 +112,7 @@ local function addPathToWindows(): boolean
     end
 
     -- Use setx to set the user PATH (persists across sessions)
-    local result = process.exec("setx", { "PATH", newPath }, { stdio = "pipe" })
+    local result = process.exec("setx", { "PATH", newPath })
 
     return result.ok
 end

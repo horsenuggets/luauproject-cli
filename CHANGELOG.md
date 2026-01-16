@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.4
+- Add unit tests to CI workflow for PRs to main and release
+- Add install command tests to CI workflow for PRs to main and release
+- Fix Windows install command error (invalid stdio option)
+
 ## 0.0.3
 - Add self-install command with cross-platform support (Windows, macOS, Linux)
 - Add one-liner install scripts for quick installation from GitHub releases
