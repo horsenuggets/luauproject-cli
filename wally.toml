@@ -9,8 +9,8 @@ realm = "shared"
 private = true
 
 [dependencies]
-Chalk = "horsenuggets/chalk-luau@0.0.0"
-Commandline = "horsenuggets/commandline-luau@0.0.3"
+Chalk = "horsenuggets/chalk-luau@0.1.0"
+Commandline = "horsenuggets/commandline-luau@0.0.5"
 
 [dev-dependencies]
 Testable = "horsenuggets/testable@0.1.0"

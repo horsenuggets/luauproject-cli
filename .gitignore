@@ -1,3 +1,5 @@
+__VERSION__.luau
+_build_entry.luau
 .DS_Store
 .env
 .local
