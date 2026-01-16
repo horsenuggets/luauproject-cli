@@ -1,11 +1,12 @@
 #
-# Dockerfile for luauproject-cli testing
+# Dockerfile
 #
 # This container provides an isolated environment with all the tools needed to test
 # the luauproject CLI: git, rokit (for wally/lune), and a mock gh CLI.
 #
 
-FROM ubuntu:22.04
+# Use linux/amd64 platform explicitly since forked tools may not have ARM64 releases
+FROM --platform=linux/amd64 ubuntu:24.04
 
 # Avoid interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -27,49 +28,35 @@ RUN git config --global user.email "test@example.com" && \
 RUN curl -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | bash
 ENV PATH="/root/.rokit/bin:${PATH}"
 
-# Install Lune and Wally via Rokit
-RUN rokit add lune-org/lune@0.10.4-horse.1.0 --global && \
-    rokit add UpliftGames/wally@0.3.2 --global
+# Trust all tools used by the luau-package-template and install Lune/Wally globally
+RUN rokit trust horsenuggets/lune && \
+    rokit trust horsenuggets/wally && \
+    rokit trust johnnymorganz/luau-lsp && \
+    rokit trust johnnymorganz/stylua && \
+    rokit trust rojo-rbx/rojo && \
+    rokit add horsenuggets/lune@0.10.4-horse.3.0 --global && \
+    rokit add horsenuggets/wally@0.3.2-horse.1.0 --global
 
-# Create a mock gh CLI that simulates GitHub CLI behavior for testing
-# This prevents tests from actually creating GitHub repos
-RUN mkdir -p /usr/local/bin && \
-    echo '#!/bin/bash' > /usr/local/bin/gh && \
-    echo 'case "$1" in' >> /usr/local/bin/gh && \
-    echo '  "auth")' >> /usr/local/bin/gh && \
-    echo '    echo "Logged in as test-user"' >> /usr/local/bin/gh && \
-    echo '    exit 0' >> /usr/local/bin/gh && \
-    echo '    ;;' >> /usr/local/bin/gh && \
-    echo '  "api")' >> /usr/local/bin/gh && \
-    echo '    if [[ "$2" == "user" ]]; then' >> /usr/local/bin/gh && \
-    echo '      echo "test-user"' >> /usr/local/bin/gh && \
-    echo '    elif [[ "$2" == "user/orgs" ]]; then' >> /usr/local/bin/gh && \
-    echo '      echo ""' >> /usr/local/bin/gh && \
-    echo '    else' >> /usr/local/bin/gh && \
-    echo '      echo "{}"' >> /usr/local/bin/gh && \
-    echo '    fi' >> /usr/local/bin/gh && \
-    echo '    exit 0' >> /usr/local/bin/gh && \
-    echo '    ;;' >> /usr/local/bin/gh && \
-    echo '  "repo")' >> /usr/local/bin/gh && \
-    echo '    if [[ "$2" == "clone" ]]; then' >> /usr/local/bin/gh && \
-    echo '      # Simulate cloning by creating directory structure' >> /usr/local/bin/gh && \
-    echo '      mkdir -p "$4"' >> /usr/local/bin/gh && \
-    echo '      echo "Cloned $3 to $4"' >> /usr/local/bin/gh && \
-    echo '    elif [[ "$2" == "create" ]]; then' >> /usr/local/bin/gh && \
-    echo '      echo "Created repository $3"' >> /usr/local/bin/gh && \
-    echo '    fi' >> /usr/local/bin/gh && \
-    echo '    exit 0' >> /usr/local/bin/gh && \
-    echo '    ;;' >> /usr/local/bin/gh && \
-    echo '  "secret")' >> /usr/local/bin/gh && \
-    echo '    echo "Secret set"' >> /usr/local/bin/gh && \
-    echo '    exit 0' >> /usr/local/bin/gh && \
-    echo '    ;;' >> /usr/local/bin/gh && \
-    echo '  *)' >> /usr/local/bin/gh && \
-    echo '    echo "Mock gh: $@"' >> /usr/local/bin/gh && \
-    echo '    exit 0' >> /usr/local/bin/gh && \
-    echo '    ;;' >> /usr/local/bin/gh && \
-    echo 'esac' >> /usr/local/bin/gh && \
-    chmod +x /usr/local/bin/gh
+# Create mock gh CLI script
+COPY Tests/mock-gh.sh /usr/local/bin/gh
+RUN chmod +x /usr/local/bin/gh
+
+# Copy CLI source code for running via lune
+# Packages are already installed on host, so we just copy them directly
+COPY . /opt/luauproject-cli
+
+# Remove @lune alias from .luaurc as it's only needed for IDE type checking
+RUN cd /opt/luauproject-cli && \
+    sed -i '/"lune":/d' .luaurc
+
+# Create wrapper script for luauproject that runs via lune
+# We capture the original working directory before cd'ing, and pass it as LUAUPROJECT_CWD
+# LUAUPROJECT_SKIP_INSTALL skips rokit/wally install to avoid GitHub API rate limits in tests
+# Note: Don't use -- after the script name as lune passes it as the first argument
+RUN echo '#!/bin/bash' > /usr/local/bin/luauproject && \
+    echo 'ORIG_CWD="$(pwd)"' >> /usr/local/bin/luauproject && \
+    echo 'cd /opt/luauproject-cli && LUAUPROJECT_CWD="$ORIG_CWD" LUAUPROJECT_SKIP_INSTALL=1 lune run Source/LuauprojectCli/luauproject-cli.luau "$@"' >> /usr/local/bin/luauproject && \
+    chmod +x /usr/local/bin/luauproject
 
 # Create workspace directory
 WORKDIR /workspace

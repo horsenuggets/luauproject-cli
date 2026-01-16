@@ -11,17 +11,10 @@ workflow without affecting the host system.
 local fs = require("@lune/fs")
 local process = require("@lune/process")
 
-local DockerEnvironmentHelpers = {}
-
-local DOCKER_IMAGE = "luauproject-cli-test"
 local CONTAINER_WORK_DIR = "/workspace"
+local DOCKER_IMAGE = "luauproject-cli-test"
 
-export type ExecResult = {
-    ok: boolean,
-    code: number,
-    stdout: string,
-    stderr: string,
-}
+local DockerEnvironmentHelpers = {}
 
 export type DockerEnv = {
     containerId: string,
@@ -36,6 +29,13 @@ export type DockerEnv = {
     runCli: (args: { string }?) -> ExecResult,
     initGit: () -> (),
     gitCommit: (message: string) -> (),
+}
+
+export type ExecResult = {
+    ok: boolean,
+    code: number,
+    stdout: string,
+    stderr: string,
 }
 
 local function ensureImageExists()
@@ -84,17 +84,6 @@ function DockerEnvironmentHelpers.create(): DockerEnv
     assert(startResult.ok, `Failed to start Docker container: {startResult.stderr}`)
 
     local containerId = startResult.stdout:gsub("%s+", "")
-
-    local copyResult = process.exec("docker", {
-        "cp",
-        `{process.cwd}/Build/luauproject`,
-        `{containerId}:/usr/local/bin/luauproject`,
-    })
-
-    if not copyResult.ok then
-        process.exec("docker", { "rm", "-f", containerId })
-        error(`Failed to copy CLI binary to container: {copyResult.stderr}`)
-    end
 
     local env: DockerEnv = {
         containerId = containerId,
