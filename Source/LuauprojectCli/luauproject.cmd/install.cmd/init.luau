@@ -9,6 +9,7 @@ it to the user's PATH.
 
 local Chalk = require("@packages/Chalk")
 local Command = require("@packages/Commandline").Command
+local PathHelpers = require("@self/Helpers/PathHelpers")
 local fs = require("@lune/fs")
 local process = require("@lune/process")
 local stdio = require("@lune/stdio")
@@ -19,8 +20,8 @@ local stdio = require("@lune/stdio")
 
 local IS_WINDOWS = process.os == "windows"
 local HOME_DIR = if IS_WINDOWS then process.env.USERPROFILE else process.env.HOME
-local INSTALL_DIR = `{HOME_DIR}/.luauproject-cli`
-local BIN_DIR = `{INSTALL_DIR}/bin`
+local INSTALL_DIR = PathHelpers.normalize(`{HOME_DIR}/.luauproject-cli`)
+local BIN_DIR = PathHelpers.normalize(`{INSTALL_DIR}/bin`)
 local EXECUTABLE_NAME = if IS_WINDOWS then "luauproject.exe" else "luauproject"
 local PATH_EXPORT_COMMENT = "# Added by luauproject-cli"
 local PATH_EXPORT_LINE = `export PATH="{BIN_DIR}:$PATH"`
@@ -29,8 +30,8 @@ local SHELL_CONFIGS = {
     { file = ".bashrc", shell = "bash" },
     { file = ".zshrc", shell = "zsh" },
 }
-local XSH_DIR = `{HOME_DIR}/.xsh`
-local XSH_PATH_FILE = `{HOME_DIR}/.path`
+local XSH_DIR = PathHelpers.normalize(`{HOME_DIR}/.xsh`)
+local XSH_PATH_FILE = PathHelpers.normalize(`{HOME_DIR}/.path`)
 
 ------------------------------------------------------------------------------------------
 -- Helper Functions
@@ -122,7 +123,7 @@ end
 ------------------------------------------------------------------------------------------
 
 local function getShellConfigPath(configFile: string): string
-    return `{HOME_DIR}/{configFile}`
+    return PathHelpers.normalize(`{HOME_DIR}/{configFile}`)
 end
 
 local function configHasPathExport(configPath: string): boolean
@@ -231,10 +232,12 @@ local function printNotStandalone()
 end
 
 local function printSuccess(updatedConfig: string?, usedXsh: boolean?, usedWindows: boolean?)
+    local installedPath = PathHelpers.normalize(`{BIN_DIR}/{EXECUTABLE_NAME}`)
+
     print()
     print(Chalk.bold(Chalk.greenBright("Installation complete!")))
     print()
-    print(`Installed to {Chalk.dim(`{BIN_DIR}/{EXECUTABLE_NAME}`)}.`)
+    print(`Installed to {Chalk.dim(installedPath)}.`)
 
     if usedWindows then
         print()
@@ -245,8 +248,9 @@ local function printSuccess(updatedConfig: string?, usedXsh: boolean?, usedWindo
         print(`Added {Chalk.dim(BIN_DIR)} to PATH in {Chalk.dim(XSH_PATH_FILE)}.`)
         print(Chalk.yellow("Restart your terminal to use luauproject."))
     elseif updatedConfig then
+        local configPath = PathHelpers.normalize(`{HOME_DIR}/{updatedConfig}`)
         print()
-        print(`Added {Chalk.dim(BIN_DIR)} to PATH in {Chalk.dim(`{HOME_DIR}/{updatedConfig}`)}.`)
+        print(`Added {Chalk.dim(BIN_DIR)} to PATH in {Chalk.dim(configPath)}.`)
         print(Chalk.yellow("Restart your terminal or run the following to use luauproject:"))
         print(Chalk.dim(`  source ~/{updatedConfig}`))
     elseif isInPath() then
@@ -256,8 +260,9 @@ local function printSuccess(updatedConfig: string?, usedXsh: boolean?, usedWindo
 end
 
 local function printAlreadyInstalled()
+    local installedPath = PathHelpers.normalize(`{BIN_DIR}/{EXECUTABLE_NAME}`)
     print(Chalk.yellow("luauproject is already installed and PATH is configured."))
-    print(Chalk.dim(`Location: {BIN_DIR}/{EXECUTABLE_NAME}`))
+    print(Chalk.dim(`Location: {installedPath}`))
 end
 
 ------------------------------------------------------------------------------------------
@@ -275,7 +280,7 @@ local function install()
     end
 
     -- Check if already installed and in PATH
-    local destPath = `{BIN_DIR}/{EXECUTABLE_NAME}`
+    local destPath = PathHelpers.normalize(`{BIN_DIR}/{EXECUTABLE_NAME}`)
     if fs.isFile(destPath) and isInPath() then
         printAlreadyInstalled()
         return
