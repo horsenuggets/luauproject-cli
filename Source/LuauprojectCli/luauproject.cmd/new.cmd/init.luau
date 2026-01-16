@@ -413,7 +413,7 @@ end
 ------------------------------------------------------------------------------------------
 
 local function createGithubRepository(config: ProjectConfig)
-    printStep("Creating GitHub repository.")
+    printStep("Creating GitHub repository...")
 
     local visibility = if config.IsPrivate then "--private" else "--public"
     runOrFail("gh", {
@@ -428,7 +428,7 @@ local function createGithubRepository(config: ProjectConfig)
 end
 
 local function configureRepoSettings(config: ProjectConfig)
-    printStep("Configuring repository settings.")
+    printStep("Configuring repository settings...")
 
     runOrFail("gh", {
         "api",
@@ -455,7 +455,7 @@ local function configureRepoSettings(config: ProjectConfig)
 end
 
 local function createReleaseBranch(config: ProjectConfig)
-    printStep("Creating release branch.")
+    printStep("Creating release branch...")
     runOrFail("git", { "checkout", "-b", "release" }, config.ProjectPath)
     runOrFail("git", { "push", "-u", "origin", "release" }, config.ProjectPath)
     runOrFail("git", { "checkout", "main" }, config.ProjectPath)
@@ -509,11 +509,11 @@ local function getReleaseBranchProtectionJson(): string
 	}]]
 end
 
-local function applyBranchProtection(owner: string, name: string, branch: string, protectionJson: string)
+local function applyBranchProtection(owner: string, name: string, branch: string, protectionJson: string): boolean
     local tempFile = `/tmp/{branch}-protection.json`
     fs.writeFile(tempFile, protectionJson)
 
-    runOrFail("gh", {
+    local ok, _ = run("gh", {
         "api",
         `repos/{owner}/{name}/branches/{branch}/protection`,
         "-X",
@@ -523,13 +523,19 @@ local function applyBranchProtection(owner: string, name: string, branch: string
         "--input",
         tempFile,
     })
+
+    return ok
 end
 
 local function setupBranchProtection(config: ProjectConfig)
-    printStep("Setting up branch protection rules.")
+    printStep("Setting up branch protection rules...")
 
-    applyBranchProtection(config.Owner, config.Name, "main", getMainBranchProtectionJson())
-    applyBranchProtection(config.Owner, config.Name, "release", getReleaseBranchProtectionJson())
+    local mainOk = applyBranchProtection(config.Owner, config.Name, "main", getMainBranchProtectionJson())
+    local releaseOk = applyBranchProtection(config.Owner, config.Name, "release", getReleaseBranchProtectionJson())
+
+    if not mainOk or not releaseOk then
+        print(Chalk.yellow("Failed to set branch protection (requires GitHub Pro for private repos)."))
+    end
 end
 
 local function setupWallyToken(config: ProjectConfig)
@@ -540,7 +546,7 @@ local function setupWallyToken(config: ProjectConfig)
         return
     end
 
-    printStep("Setting up Wally authentication token.")
+    printStep("Setting up Wally authentication token...")
 
     local ok, _ = run("gh", {
         "secret",
@@ -553,9 +559,9 @@ local function setupWallyToken(config: ProjectConfig)
     })
 
     if ok then
-        print(Chalk.dim("Wally token configured for publishing."))
+        print(Chalk.dim("Wally token configured for publishing..."))
     else
-        print(Chalk.yellow("Warning: Failed to set Wally token. Set it manually in repository settings."))
+        print(Chalk.yellow("Failed to set Wally token. Set it manually in the repository settings."))
     end
 end
 
