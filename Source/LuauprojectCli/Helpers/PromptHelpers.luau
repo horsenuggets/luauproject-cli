@@ -1,6 +1,6 @@
 --[[
 
-prompts
+PromptHelpers
 
 Helper functions for prompting users for input via the command line.
 
@@ -9,7 +9,9 @@ Helper functions for prompting users for input via the command line.
 local Chalk = require("@packages/Chalk")
 local stdio = require("@lune/stdio")
 
-local function prompt(message: string, default: string?): string
+local PromptHelpers = {}
+
+function PromptHelpers.prompt(message: string, default: string?): string
     local displayMessage = message
     if default then
         displayMessage = `{message} [{Chalk.dim(default)}]`
@@ -22,7 +24,7 @@ local function prompt(message: string, default: string?): string
     return result
 end
 
-local function promptConfirm(message: string, default: boolean?): boolean
+function PromptHelpers.promptConfirm(message: string, default: boolean?): boolean
     local defaultStr = if default == true then "Y/n" elseif default == false then "y/N" else "y/n"
     local result = stdio.prompt("text", `{message} ({Chalk.dim(defaultStr)})`)
 
@@ -33,7 +35,4 @@ local function promptConfirm(message: string, default: boolean?): boolean
     return result:lower() == "y" or result:lower() == "yes"
 end
 
-return {
-    prompt = prompt,
-    promptConfirm = promptConfirm,
-}
+return PromptHelpers

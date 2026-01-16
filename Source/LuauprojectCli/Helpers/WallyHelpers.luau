@@ -1,6 +1,6 @@
 --[[
 
-wally
+WallyHelpers
 
 Helper functions for interacting with the Wally package manager.
 
@@ -10,7 +10,9 @@ local fs = require("@lune/fs")
 local process = require("@lune/process")
 local serde = require("@lune/serde")
 
-local function getAuthToken(): string?
+local WallyHelpers = {}
+
+function WallyHelpers.getAuthToken(): string?
     local envToken = process.env.WALLY_AUTH_TOKEN
     if envToken and envToken ~= "" then
         return envToken
@@ -42,6 +44,4 @@ local function getAuthToken(): string?
     return nil
 end
 
-return {
-    getAuthToken = getAuthToken,
-}
+return WallyHelpers

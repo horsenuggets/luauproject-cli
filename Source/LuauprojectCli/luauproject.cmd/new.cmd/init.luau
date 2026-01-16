@@ -8,13 +8,16 @@ prompts and command-line flags.
 ]]
 
 local Chalk = require("@packages/Chalk")
-local Commandline = require("@packages/Commandline")
-local Helpers = require("../Helpers")
+local Command = require("@packages/Commandline").Command
+local Flag = require("@packages/Commandline").Flag
+local GitHubHelpers = require("@self/Helpers/GitHubHelpers")
+local PromptHelpers = require("@self/Helpers/PromptHelpers")
+local ShellHelpers = require("@self/Helpers/ShellHelpers")
+local StringHelpers = require("@self/Helpers/StringHelpers")
+local WallyHelpers = require("@self/Helpers/WallyHelpers")
 local fs = require("@lune/fs")
 local process = require("@lune/process")
 local stdio = require("@lune/stdio")
-local Command = Commandline.Command
-local Flag = Commandline.Flag
 
 ------------------------------------------------------------------------------------------
 -- Constants
@@ -92,7 +95,7 @@ end
 
 local function getProjectName(flags: any): string
     if flags.name.Value and flags.name.Value ~= "" then
-        local corrected = Helpers.strings.toKebabCase(flags.name.Value)
+        local corrected = StringHelpers.toKebabCase(flags.name.Value)
         if corrected == "" then
             stdio.ewrite(Chalk.red("Project name is empty after correction.\n"))
             process.exit(1)
@@ -104,13 +107,13 @@ local function getProjectName(flags: any): string
     end
 
     while true do
-        local input = Helpers.prompts.prompt("Project name (kebab-case)")
+        local input = PromptHelpers.prompt("Project name (kebab-case)")
         if input == "" then
             stdio.ewrite(Chalk.red("Project name is required.\n"))
             process.exit(1)
         end
 
-        local corrected = Helpers.strings.toKebabCase(input)
+        local corrected = StringHelpers.toKebabCase(input)
         if corrected == "" then
             print(Chalk.yellow("Project name is empty after correction. Please try again."))
             continue
@@ -128,7 +131,7 @@ local function getDescription(flags: any): string
     if flags.description.Value and flags.description.Value ~= "" then
         return flags.description.Value
     end
-    return Helpers.prompts.prompt("Description", "A Luau package.")
+    return PromptHelpers.prompt("Description", "A Luau package.")
 end
 
 local function getOwner(flags: any): string
@@ -136,17 +139,17 @@ local function getOwner(flags: any): string
         return flags.owner.Value
     end
 
-    local owners = Helpers.github.getAvailableOwners()
+    local owners = GitHubHelpers.getAvailableOwners()
 
     if #owners == 0 then
-        local result = Helpers.prompts.prompt("GitHub owner or organization")
+        local result = PromptHelpers.prompt("GitHub owner or organization")
         if result == "" then
             stdio.ewrite(Chalk.red("GitHub owner is required.\n"))
             process.exit(1)
         end
         return result
     elseif #owners == 1 then
-        return Helpers.prompts.prompt("GitHub owner or organization", owners[1])
+        return PromptHelpers.prompt("GitHub owner or organization", owners[1])
     end
 
     local index = stdio.prompt("select", "GitHub owner or organization", owners)
@@ -166,7 +169,7 @@ local function shouldCreateGithubRepo(flags: any): boolean
     if flags.private.Value then
         return true
     end
-    return Helpers.prompts.promptConfirm("Create GitHub repository?", true)
+    return PromptHelpers.promptConfirm("Create GitHub repository?", true)
 end
 
 local function shouldBePrivate(flags: any, createGithubRepo: boolean): boolean
@@ -179,7 +182,7 @@ local function shouldBePrivate(flags: any, createGithubRepo: boolean): boolean
     if flags.nogithub.Value then
         return false
     end
-    return Helpers.prompts.promptConfirm("Private repository?", false)
+    return PromptHelpers.promptConfirm("Private repository?", false)
 end
 
 local function getBasePath(flags: any): string
@@ -197,7 +200,7 @@ local function gatherProjectConfig(flags: any): ProjectConfig
 
     return {
         Name = name,
-        PascalName = Helpers.strings.toPascalCase(name),
+        PascalName = StringHelpers.toPascalCase(name),
         Description = description,
         Owner = owner,
         ProjectPath = `{basePath}/{name}`,
@@ -212,13 +215,13 @@ end
 
 local function cloneTemplate(projectPath: string)
     printStep("Cloning template repository...")
-    Helpers.shell.runOrFail("gh", { "repo", "clone", TEMPLATE_REPO, projectPath, "--", "--depth=1" })
+    ShellHelpers.runOrFail("gh", { "repo", "clone", TEMPLATE_REPO, projectPath, "--", "--depth=1" })
     fs.removeDir(`{projectPath}/.git`)
 end
 
 local function initializeGitRepo(projectPath: string)
     printStep("Initializing git repository...")
-    Helpers.shell.runOrFail("git", { "init" }, projectPath)
+    ShellHelpers.runOrFail("git", { "init" }, projectPath)
 end
 
 local function updateWallyToml(config: ProjectConfig)
@@ -306,14 +309,14 @@ local function setupSubmodules(config: ProjectConfig)
     printStep("Setting up git submodules...")
     removeEmptySubmodules(config)
 
-    Helpers.shell.runOrFail("git", {
+    ShellHelpers.runOrFail("git", {
         "submodule",
         "add",
         "https://github.com/horsenuggets/claude-md-luau.git",
         "Submodules/claude-md-luau",
     }, config.ProjectPath)
 
-    Helpers.shell.runOrFail("git", {
+    ShellHelpers.runOrFail("git", {
         "submodule",
         "add",
         "https://github.com/horsenuggets/luau-cicd.git",
@@ -323,18 +326,18 @@ end
 
 local function installTools(config: ProjectConfig)
     printStep("Installing Rokit tools...")
-    Helpers.shell.runOrFail("rokit", { "install" }, config.ProjectPath)
+    ShellHelpers.runOrFail("rokit", { "install" }, config.ProjectPath)
 end
 
 local function installDependencies(config: ProjectConfig)
     printStep("Installing Wally dependencies...")
-    Helpers.shell.runOrFail("wally", { "install" }, config.ProjectPath)
+    ShellHelpers.runOrFail("wally", { "install" }, config.ProjectPath)
 end
 
 local function createInitialCommit(config: ProjectConfig)
     printStep("Creating initial commit...")
-    Helpers.shell.runOrFail("git", { "add", "-A" }, config.ProjectPath)
-    Helpers.shell.runOrFail("git", { "commit", "-m", "Initial commit from luauproject-cli" }, config.ProjectPath)
+    ShellHelpers.runOrFail("git", { "add", "-A" }, config.ProjectPath)
+    ShellHelpers.runOrFail("git", { "commit", "-m", "Initial commit from luauproject-cli" }, config.ProjectPath)
 end
 
 ------------------------------------------------------------------------------------------
@@ -345,7 +348,7 @@ local function createGithubRepository(config: ProjectConfig)
     printStep("Creating GitHub repository...")
 
     local visibility = if config.IsPrivate then "--private" else "--public"
-    Helpers.shell.runOrFail("gh", {
+    ShellHelpers.runOrFail("gh", {
         "repo",
         "create",
         `{config.Owner}/{config.Name}`,
@@ -359,7 +362,7 @@ end
 local function configureRepoSettings(config: ProjectConfig)
     printStep("Configuring repository settings...")
 
-    Helpers.shell.runOrFail("gh", {
+    ShellHelpers.runOrFail("gh", {
         "api",
         `repos/{config.Owner}/{config.Name}`,
         "-X",
@@ -385,9 +388,9 @@ end
 
 local function createReleaseBranch(config: ProjectConfig)
     printStep("Creating release branch...")
-    Helpers.shell.runOrFail("git", { "checkout", "-b", "release" }, config.ProjectPath)
-    Helpers.shell.runOrFail("git", { "push", "-u", "origin", "release" }, config.ProjectPath)
-    Helpers.shell.runOrFail("git", { "checkout", "main" }, config.ProjectPath)
+    ShellHelpers.runOrFail("git", { "checkout", "-b", "release" }, config.ProjectPath)
+    ShellHelpers.runOrFail("git", { "push", "-u", "origin", "release" }, config.ProjectPath)
+    ShellHelpers.runOrFail("git", { "checkout", "main" }, config.ProjectPath)
 end
 
 local function getMainBranchProtectionJson(): string
@@ -442,7 +445,7 @@ local function applyBranchProtection(owner: string, name: string, branch: string
     local tempFile = `/tmp/{branch}-protection.json`
     fs.writeFile(tempFile, protectionJson)
 
-    local ok, _ = Helpers.shell.run("gh", {
+    local ok, _ = ShellHelpers.run("gh", {
         "api",
         `repos/{owner}/{name}/branches/{branch}/protection`,
         "-X",
@@ -468,7 +471,7 @@ local function setupBranchProtection(config: ProjectConfig)
 end
 
 local function setupWallyToken(config: ProjectConfig)
-    local wallyToken = Helpers.wally.getAuthToken()
+    local wallyToken = WallyHelpers.getAuthToken()
 
     if not wallyToken then
         printWallyTokenWarning(config.Owner, config.Name)
@@ -477,7 +480,7 @@ local function setupWallyToken(config: ProjectConfig)
 
     printStep("Setting up Wally authentication token...")
 
-    local ok, _ = Helpers.shell.run("gh", {
+    local ok, _ = ShellHelpers.run("gh", {
         "secret",
         "set",
         "WALLY_AUTH_TOKEN",
@@ -569,7 +572,7 @@ return Command.new({
         }),
     },
     Impl = function(_args, flags)
-        Helpers.github.ensureInstalled()
+        GitHubHelpers.ensureInstalled()
         printHeader()
         local config = gatherProjectConfig(flags)
         createProject(config)
