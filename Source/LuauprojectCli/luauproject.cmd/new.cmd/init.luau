@@ -420,7 +420,7 @@ local function setupSubmodules(config: ProjectConfig)
 end
 
 local function installDependencies(config: ProjectConfig)
-    printStep("Installing wally dependencies...")
+    printStep("Installing Wally dependencies...")
     runOrFail("wally", { "install" }, config.ProjectPath)
 end
 
