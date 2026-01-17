@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0
+- Add PathHelpers module for cross-platform path normalization
+- Add workflow to test install scripts after release
+- Fix install command require path and always overwrite binary
+- Fix name replacements in dev.project.json for new projects
+
 ## 0.0.4
 - Add unit tests to CI workflow for PRs to main and release
 - Add install command tests to CI workflow for PRs to main and release
