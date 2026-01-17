@@ -271,10 +271,12 @@ local function updateWallyToml(config: ProjectConfig)
 end
 
 local function updateProjectJson(config: ProjectConfig)
-    replaceInFile(`{config.ProjectPath}/default.project.json`, {
+    local replacements = {
         { '"luau%-package%-template"', `"{config.Name}"` },
         { "Source/LuauPackageTemplate", `Source/{config.PascalName}` },
-    })
+    }
+    replaceInFile(`{config.ProjectPath}/default.project.json`, replacements)
+    replaceInFile(`{config.ProjectPath}/dev.project.json`, replacements)
 end
 
 local function updateRootInit(config: ProjectConfig)
