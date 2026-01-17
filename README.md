@@ -9,13 +9,13 @@ A CLI tool for instantiating new Luau projects.
 **macOS / Linux:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/horsenuggets/luauproject-cli/main/Scripts/Install.Unix.sh | bash
+curl -fsSL "https://raw.githubusercontent.com/horsenuggets/luauproject-cli/main/Scripts/Install.Unix.sh" | bash
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-iwr https://raw.githubusercontent.com/horsenuggets/luauproject-cli/main/Scripts/Install.Win.ps1 -useb | iex
+iwr "https://raw.githubusercontent.com/horsenuggets/luauproject-cli/main/Scripts/Install.Win.ps1" -useb | iex
 ```
 
 ### Manual Install
