@@ -18,18 +18,12 @@ jobs:
           - os: linux
             runner: ubuntu-latest
             target: linux-x86_64
-            install_dir: ~/.luauproject-cli/bin
-            executable: luauproject
           - os: macos
             runner: macos-latest
             target: macos-aarch64
-            install_dir: ~/.luauproject-cli/bin
-            executable: luauproject
           - os: windows
             runner: windows-latest
             target: windows-x86_64
-            install_dir: $env:USERPROFILE\.luauproject-cli\bin
-            executable: luauproject.exe
 
     steps:
       - name: Checkout code
@@ -54,11 +48,11 @@ jobs:
 
           # Verify installation
           if [ ! -f "$HOME/.luauproject-cli/bin/luauproject" ]; then
-            echo "ERROR: Executable not found at expected location"
+            echo "Executable not found at expected location."
             exit 1
           fi
 
-          echo "Installation successful!"
+          echo "Installation successful."
           ls -la "$HOME/.luauproject-cli/bin/"
 
       - name: Test install command (Windows)
@@ -70,11 +64,11 @@ jobs:
           # Verify installation
           $installPath = "$env:USERPROFILE\.luauproject-cli\bin\luauproject.exe"
           if (-not (Test-Path $installPath)) {
-            Write-Error "Executable not found at expected location"
+            Write-Error "Executable not found at expected location."
             exit 1
           }
 
-          Write-Host "Installation successful!"
+          Write-Host "Installation successful."
           Get-ChildItem "$env:USERPROFILE\.luauproject-cli\bin\"
 
       - name: Verify installed executable runs (Unix)
