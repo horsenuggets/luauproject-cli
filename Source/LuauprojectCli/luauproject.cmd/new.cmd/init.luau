@@ -46,6 +46,7 @@ type ProjectConfig = {
     ProjectPath: string,
     CreateGithubRepo: boolean,
     IsPrivate: boolean,
+    IsPrivatePackage: boolean,
 }
 
 ------------------------------------------------------------------------------------------
@@ -222,6 +223,13 @@ local function shouldBePrivate(flags: any, createGithubRepo: boolean): boolean
     return PromptHelpers.promptConfirm("Private repository?", false)
 end
 
+local function shouldBePrivatePackage(flags: any): boolean
+    if flags.privatepackage.Value then
+        return true
+    end
+    return PromptHelpers.promptConfirm("Private package? (will not publish to Wally)", false)
+end
+
 local function getBasePath(flags: any): string
     -- LUAUPROJECT_CWD is set by the wrapper script when running from a different directory
     local basePath = flags.path.Value or process.env.LUAUPROJECT_CWD or process.cwd
@@ -234,6 +242,7 @@ local function gatherProjectConfig(flags: any): ProjectConfig
     local owner = getOwner(flags)
     local createGithubRepo = shouldCreateGithubRepo(flags)
     local isPrivate = shouldBePrivate(flags, createGithubRepo)
+    local isPrivatePackage = shouldBePrivatePackage(flags)
     local basePath = getBasePath(flags)
 
     return {
@@ -244,6 +253,7 @@ local function gatherProjectConfig(flags: any): ProjectConfig
         ProjectPath = `{basePath}/{name}`,
         CreateGithubRepo = createGithubRepo,
         IsPrivate = isPrivate,
+        IsPrivatePackage = isPrivatePackage,
     }
 end
 
@@ -263,11 +273,24 @@ local function initializeGitRepo(projectPath: string)
 end
 
 local function updateWallyToml(config: ProjectConfig)
-    replaceInFile(`{config.ProjectPath}/wally.toml`, {
-        { "horsenuggets/luau%-package%-template", `{config.Owner}/{config.Name}` },
-        { "luau%-package%-template", config.Name },
-        { "A template for creating Luau packages%.", config.Description },
-    })
+    local wallyPath = `{config.ProjectPath}/wally.toml`
+    if not fs.isFile(wallyPath) then
+        return
+    end
+
+    local content = fs.readFile(wallyPath)
+
+    -- Standard replacements
+    content = content:gsub("horsenuggets/luau%-package%-template", `{config.Owner}/{config.Name}`)
+    content = content:gsub("luau%-package%-template", config.Name)
+    content = content:gsub("A template for creating Luau packages%.", config.Description)
+
+    -- Add private = true for private packages (after the name line)
+    if config.IsPrivatePackage then
+        content = content:gsub('(name = "[^"]+")\n', "%1\nprivate = true\n")
+    end
+
+    fs.writeFile(wallyPath, content)
 end
 
 local function updateProjectJson(config: ProjectConfig)
@@ -642,7 +665,11 @@ local function setupGithubRepository(config: ProjectConfig)
     createReleaseBranch(config)
     setupBranchProtection(config)
     setupCopilotCodeReview(config)
-    setupWallyToken(config)
+
+    -- Skip Wally token setup for private packages (they won't be published to Wally)
+    if not config.IsPrivatePackage then
+        setupWallyToken(config)
+    end
 end
 
 ------------------------------------------------------------------------------------------
@@ -713,6 +740,10 @@ return Command.new({
             Shorthand = "p",
             Description = "Directory to create project in.",
             Type = "string",
+        }),
+        Flag.new({
+            Name = "privatepackage",
+            Description = "Make this a private package (will not publish to Wally).",
         }),
     },
     Impl = function(_args, flags)
