@@ -9,7 +9,7 @@ it to the user's PATH.
 
 local Chalk = require("@packages/Chalk")
 local Command = require("@packages/Commandline").Command
-local PathHelpers = require("@self/Helpers/PathHelpers")
+local PathHelpers = require("@luauprojectcli/Helpers/PathHelpers")
 local fs = require("@lune/fs")
 local process = require("@lune/process")
 local stdio = require("@lune/stdio")
@@ -279,12 +279,7 @@ local function install()
         process.exit(1)
     end
 
-    -- Check if already installed and in PATH
     local destPath = PathHelpers.normalize(`{BIN_DIR}/{EXECUTABLE_NAME}`)
-    if fs.isFile(destPath) and isInPath() then
-        printAlreadyInstalled()
-        return
-    end
 
     -- Create installation directory
     print("Creating installation directory...")
