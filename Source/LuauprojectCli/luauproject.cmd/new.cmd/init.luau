@@ -116,9 +116,9 @@ end
 
 local function printWallyTokenWarning(owner: string, name: string)
     print()
-    print(Chalk.yellow("WALLY_AUTH_TOKEN not found in environment."))
+    print(Chalk.yellow("WALLY_AUTH not found in environment."))
     print(Chalk.dim("To enable Wally publishing, add the secret manually:"))
-    print(Chalk.dim(`> gh secret set WALLY_AUTH_TOKEN --repo {owner}/{name}`))
+    print(Chalk.dim(`> gh secret set WALLY_AUTH --repo {owner}/{name}`))
 end
 
 ------------------------------------------------------------------------------------------
@@ -891,7 +891,7 @@ local function setupWallyToken(config: ProjectConfig): boolean
     local ok, _ = ShellHelpers.run("gh", {
         "secret",
         "set",
-        "WALLY_AUTH_TOKEN",
+        "WALLY_AUTH",
         "--body",
         wallyToken,
         "--repo",
