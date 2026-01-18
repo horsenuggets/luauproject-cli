@@ -443,6 +443,29 @@ local function setupSubmodules(config: ProjectConfig)
     }, config.ProjectPath)
 end
 
+local function copyWorkflows(config: ProjectConfig)
+    printStep("Setting up GitHub workflows...")
+
+    local workflowsSourceDir = `{config.ProjectPath}/Submodules/luau-cicd/Templates/workflows`
+    local workflowsTargetDir = `{config.ProjectPath}/.github/workflows`
+
+    -- Create workflows directory if it doesn't exist
+    if not fs.isDir(workflowsTargetDir) then
+        fs.writeDir(workflowsTargetDir)
+    end
+
+    -- Copy all workflow files
+    if fs.isDir(workflowsSourceDir) then
+        for _, entry in fs.readDir(workflowsSourceDir) do
+            local sourcePath = `{workflowsSourceDir}/{entry}`
+            local targetPath = `{workflowsTargetDir}/{entry}`
+            if fs.isFile(sourcePath) then
+                fs.copy(sourcePath, targetPath)
+            end
+        end
+    end
+end
+
 local function installTools(config: ProjectConfig)
     if process.env.LUAUPROJECT_SKIP_INSTALL then
         printStep("Skipping Rokit tools installation (LUAUPROJECT_SKIP_INSTALL set)...")
@@ -685,6 +708,7 @@ local function setupLocalProject(config: ProjectConfig)
     initializeGitRepo(config.ProjectPath)
     updateConfigFiles(config)
     setupSubmodules(config)
+    copyWorkflows(config)
     installTools(config)
     installDependencies(config)
     createInitialCommit(config)
