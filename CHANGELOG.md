@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+- Add --privatepackage flag to skip Wally publishing for private packages
+- Handle new dev.project.json structure from template (uses -dev suffix)
+
 ## 0.1.0
 - Add PathHelpers module for cross-platform path normalization
 - Add workflow to test install scripts after release
