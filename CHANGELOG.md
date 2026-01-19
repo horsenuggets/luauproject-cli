@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.3
+- Fix launcher crash due to using wrong Lune process function
+
 ## 0.1.2
 - Add self-update command (`luauproject update`) to download and install new versions
 - Add `--version` flag to update command for installing specific versions
