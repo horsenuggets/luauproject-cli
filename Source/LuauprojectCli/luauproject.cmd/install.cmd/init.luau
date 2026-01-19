@@ -286,11 +286,6 @@ local function printNotStandalone()
     stdio.ewrite(Chalk.dim("Build the project first with `lune build` and run the resulting executable.\n"))
 end
 
-local function printLauncherDownloadFailed()
-    stdio.ewrite(Chalk.yellow("Warning: Failed to download the launcher.\n"))
-    stdio.ewrite(Chalk.dim("You may need to run the install script again or download manually.\n"))
-end
-
 local function printSuccess(updatedConfig: string?, usedXsh: boolean?, usedWindows: boolean?)
     local launcherPath = PathHelpers.normalize(`{BIN_DIR}/{EXECUTABLE_NAME}`)
 
@@ -349,14 +344,16 @@ local function install()
     print("Setting current version...")
     fs.writeFile(CURRENT_FILE, __VERSION__)
 
-    -- Download launcher to bin directory
+    -- Download launcher to bin directory (or fall back to copying the CLI)
     local launcherPath = PathHelpers.normalize(`{BIN_DIR}/{EXECUTABLE_NAME}`)
     local launcherExists = fs.isFile(launcherPath)
 
     if not launcherExists then
         local launcherDownloaded = downloadLauncher(launcherPath)
         if not launcherDownloaded then
-            printLauncherDownloadFailed()
+            -- Fall back to copying the CLI as the launcher (pre-launcher compatibility)
+            print(Chalk.dim("Launcher not available, using CLI directly..."))
+            copyExecutable(execPath, launcherPath)
         end
     else
         print(Chalk.dim("Launcher already installed."))
