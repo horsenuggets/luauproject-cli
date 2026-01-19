@@ -115,12 +115,12 @@ local function main()
     -- Clean up old versions before spawning (they won't be in use)
     cleanupOldVersions(currentVersion)
 
-    -- Spawn the current version with all arguments
-    local result = process.spawn(executablePath, process.args, {
-        stdio = "inherit",
+    -- Execute the current version with all arguments, forwarding all stdio
+    local result = process.exec(executablePath, process.args, {
+        stdio = "forward",
     })
 
-    -- Exit with the same code as the spawned process
+    -- Exit with the same code as the executed process
     process.exit(result.code)
 end
 
