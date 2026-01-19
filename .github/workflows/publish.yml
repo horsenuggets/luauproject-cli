@@ -70,6 +70,9 @@ jobs:
       - name: Setup Rokit
         uses: CompeyDev/setup-rokit@v0.1.2
 
+      - name: Install dependencies
+        run: wally install
+
       - name: Build launcher
         run: lune run Scripts/BuildLauncher.luau ${{ matrix.target }}
 
