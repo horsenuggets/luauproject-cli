@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+- Fix CI builds producing non-portable executables by updating Lune to 0.10.4-horse.6.0
+- Fix update command --version flag not being read correctly
+
 ## 0.1.3
 - Fix launcher crash due to using wrong Lune process function
 
