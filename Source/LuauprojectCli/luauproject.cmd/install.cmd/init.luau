@@ -2,16 +2,21 @@
 
 install.cmd
 
-Installs the luauproject CLI by copying the executable to ~/.luauproject-cli/bin and adding
-it to the user's PATH.
+Installs the luauproject CLI by setting up the versioned directory structure. Copies the
+executable to ~/.luauproject-cli/versions, downloads the launcher to bin, sets up the current
+version pointer, and adds bin to the user's PATH.
 
-]]
+--]]
 
 local Chalk = require("@packages/Chalk")
 local Command = require("@packages/Commandline").Command
 local PathHelpers = require("@luauprojectcli/Helpers/PathHelpers")
+local UpdateHelpers = require("@luauprojectcli/Helpers/UpdateHelpers")
+local __VERSION__ = require("@luauprojectcli/luauproject.cmd/__VERSION__")
 local fs = require("@lune/fs")
+local net = require("@lune/net")
 local process = require("@lune/process")
+local serde = require("@lune/serde")
 local stdio = require("@lune/stdio")
 
 ------------------------------------------------------------------------------------------
@@ -22,9 +27,13 @@ local IS_WINDOWS = process.os == "windows"
 local HOME_DIR = if IS_WINDOWS then process.env.USERPROFILE else process.env.HOME
 local INSTALL_DIR = PathHelpers.normalize(`{HOME_DIR}/.luauproject-cli`)
 local BIN_DIR = PathHelpers.normalize(`{INSTALL_DIR}/bin`)
+local VERSIONS_DIR = PathHelpers.normalize(`{INSTALL_DIR}/versions`)
+local CURRENT_FILE = PathHelpers.normalize(`{INSTALL_DIR}/current`)
 local EXECUTABLE_NAME = if IS_WINDOWS then "luauproject.exe" else "luauproject"
+local EXECUTABLE_SUFFIX = if IS_WINDOWS then ".exe" else ""
 local PATH_EXPORT_COMMENT = "# Added by luauproject-cli"
 local PATH_EXPORT_LINE = `export PATH="{BIN_DIR}:$PATH"`
+local REPOSITORY = "horsenuggets/luauproject-cli"
 local SHELL_CONFIGS = {
     { file = ".bash_profile", shell = "bash" },
     { file = ".bashrc", shell = "bash" },
@@ -55,6 +64,52 @@ local function copyExecutable(sourcePath: string, destPath: string)
     if not IS_WINDOWS then
         process.exec("chmod", { "+x", destPath })
     end
+end
+
+------------------------------------------------------------------------------------------
+-- Launcher Download Functions
+------------------------------------------------------------------------------------------
+
+local function getLauncherBinaryName(): string
+    local os = process.os
+    if os == "macos" or os == "darwin" then
+        os = "macos"
+    end
+
+    local arch = process.arch
+    if arch == "arm64" then
+        arch = "aarch64"
+    end
+
+    return `luauproject-launcher-{os}-{arch}`
+end
+
+local function downloadLauncher(destPath: string): boolean
+    print("Downloading launcher...")
+
+    -- Fetch latest release to get the launcher URL
+    local release = UpdateHelpers.getLatestRelease()
+    if not release then
+        return false
+    end
+
+    local launcherName = getLauncherBinaryName()
+
+    -- Find the launcher asset
+    local downloadUrl: string? = nil
+    for _, asset in release.assets do
+        if asset.name == launcherName then
+            downloadUrl = asset.browser_download_url
+            break
+        end
+    end
+
+    if not downloadUrl then
+        return false
+    end
+
+    -- Download the launcher
+    return UpdateHelpers.downloadFile(downloadUrl, destPath)
 end
 
 ------------------------------------------------------------------------------------------
@@ -232,12 +287,13 @@ local function printNotStandalone()
 end
 
 local function printSuccess(updatedConfig: string?, usedXsh: boolean?, usedWindows: boolean?)
-    local installedPath = PathHelpers.normalize(`{BIN_DIR}/{EXECUTABLE_NAME}`)
+    local launcherPath = PathHelpers.normalize(`{BIN_DIR}/{EXECUTABLE_NAME}`)
 
     print()
     print(Chalk.bold(Chalk.greenBright("Installation complete!")))
     print()
-    print(`Installed to {Chalk.dim(installedPath)}.`)
+    print(`Installed version {Chalk.bold(__VERSION__)}.`)
+    print(`Launcher at {Chalk.dim(launcherPath)}.`)
 
     if usedWindows then
         print()
@@ -259,12 +315,6 @@ local function printSuccess(updatedConfig: string?, usedXsh: boolean?, usedWindo
     end
 end
 
-local function printAlreadyInstalled()
-    local installedPath = PathHelpers.normalize(`{BIN_DIR}/{EXECUTABLE_NAME}`)
-    print(Chalk.yellow("luauproject is already installed and PATH is configured."))
-    print(Chalk.dim(`Location: {installedPath}`))
-end
-
 ------------------------------------------------------------------------------------------
 -- Main Installation Logic
 ------------------------------------------------------------------------------------------
@@ -279,16 +329,35 @@ local function install()
         process.exit(1)
     end
 
-    local destPath = PathHelpers.normalize(`{BIN_DIR}/{EXECUTABLE_NAME}`)
-
-    -- Create installation directory
-    print("Creating installation directory...")
+    -- Create installation directories
+    print("Creating installation directories...")
     ensureDirectory(INSTALL_DIR)
     ensureDirectory(BIN_DIR)
+    ensureDirectory(VERSIONS_DIR)
 
-    -- Copy executable
-    print(`Copying executable to {Chalk.dim(destPath)}...`)
-    copyExecutable(execPath, destPath)
+    -- Copy executable to versions directory
+    local versionedPath = PathHelpers.normalize(`{VERSIONS_DIR}/luauproject-{__VERSION__}{EXECUTABLE_SUFFIX}`)
+    print(`Copying executable to {Chalk.dim(versionedPath)}...`)
+    copyExecutable(execPath, versionedPath)
+
+    -- Create/update current version pointer
+    print("Setting current version...")
+    fs.writeFile(CURRENT_FILE, __VERSION__)
+
+    -- Download launcher to bin directory (or fall back to copying the CLI)
+    local launcherPath = PathHelpers.normalize(`{BIN_DIR}/{EXECUTABLE_NAME}`)
+    local launcherExists = fs.isFile(launcherPath)
+
+    if not launcherExists then
+        local launcherDownloaded = downloadLauncher(launcherPath)
+        if not launcherDownloaded then
+            -- Fall back to copying the CLI as the launcher (pre-launcher compatibility)
+            print(Chalk.dim("Launcher not available, using CLI directly..."))
+            copyExecutable(execPath, launcherPath)
+        end
+    else
+        print(Chalk.dim("Launcher already installed."))
+    end
 
     -- Update PATH based on platform
     print("Configuring PATH...")
@@ -319,7 +388,7 @@ end
 
 return Command.new({
     Name = "install",
-    Description = "Install luauproject CLI to ~/.luauproject-cli/bin and add to PATH.",
+    Description = "Install luauproject CLI to ~/.luauproject-cli and add to PATH.",
     Impl = function()
         install()
     end,
