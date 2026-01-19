@@ -1,7 +1,7 @@
 [package]
 name = "horsenuggets/luauproject-cli"
 description = "A CLI tool for instantiating new Luau projects."
-version = "0.0.0"
+version = "0.1.2"
 license = "MIT"
 registry = "https://github.com/UpliftGames/wally-index"
 repository = "https://github.com/horsenuggets/luauproject-cli"

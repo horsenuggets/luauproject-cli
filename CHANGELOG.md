@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+- Add self-update command (`luauproject update`) to download and install new versions
+- Add `--version` flag to update command for installing specific versions
+- Change installation layout to use versioned executables with a thin launcher
+- Add launcher executable that delegates to the current version and cleans up old versions
+
 ## 0.1.1
 - Add --privatepackage flag to skip Wally publishing for private packages
 - Handle new dev.project.json structure from template (uses -dev suffix)
