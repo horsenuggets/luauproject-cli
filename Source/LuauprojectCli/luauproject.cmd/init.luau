@@ -10,6 +10,7 @@ local Commandline = require("@packages/Commandline")
 local __VERSION__ = require("@self/__VERSION__")
 local install_cmd = require("@self/install.cmd")
 local new_cmd = require("@self/new.cmd")
+local update_cmd = require("@self/update.cmd")
 
 return Commandline.Command.new({
     Name = "luauproject",
@@ -18,5 +19,6 @@ return Commandline.Command.new({
     Subcommands = {
         install_cmd,
         new_cmd,
+        update_cmd,
     },
 })
