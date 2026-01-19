@@ -166,7 +166,7 @@ return Command.new({
         }),
     },
     Impl = function(_args, flags)
-        local targetVersion = flags.version :: string?
+        local targetVersion = if flags.version.Value and flags.version.Value ~= "" then flags.version.Value else nil
         update(targetVersion)
     end,
 })
