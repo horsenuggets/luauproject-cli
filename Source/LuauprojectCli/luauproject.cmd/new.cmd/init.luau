@@ -549,9 +549,9 @@ local function getMainBranchProtectionJson(): string
 			"strict": true,
 			"checks": [
 				{ "context": "Check formatting" },
+				{ "context": "Check version match" },
 				{ "context": "Run tests" },
-				{ "context": "Static analysis" },
-				{ "context": "Validate branch name" }
+				{ "context": "Static analysis" }
 			]
 		},
 		"enforce_admins": true,
