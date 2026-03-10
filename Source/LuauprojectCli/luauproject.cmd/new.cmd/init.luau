@@ -543,44 +543,118 @@ local function createReleaseBranch(config: ProjectConfig)
     ShellHelpers.runOrFail("git", { "checkout", "main" }, config.ProjectPath)
 end
 
-local function getMainBranchProtectionJson(): string
-    return [[{
-		"required_status_checks": {
-			"strict": true,
-			"checks": [
-				{ "context": "Check formatting" },
-				{ "context": "Check version match" },
-				{ "context": "Run tests" },
-				{ "context": "Static analysis" }
-			]
-		},
-		"enforce_admins": true,
-		"required_pull_request_reviews": null,
-		"restrictions": null,
-		"allow_force_pushes": false,
-		"allow_deletions": false
-	}]]
+-- Parse job names from a GitHub Actions workflow YAML file.
+-- Reads the "name:" field from each job under "jobs:".
+-- Works with both 2-space and 4-space indented YAML.
+local function parseJobNames(workflowPath: string): { string }
+    local names: { string } = {}
+    if not fs.isFile(workflowPath) then
+        return names
+    end
+
+    local content = fs.readFile(workflowPath)
+    local inJobs = false
+    local expectName = false
+
+    for line in content:gmatch("[^\n]+") do
+        -- Detect the "jobs:" top-level key
+        if line:match("^jobs:%s*$") then
+            inJobs = true
+            continue
+        end
+
+        if not inJobs then
+            continue
+        end
+
+        -- A non-indented line after "jobs:" means we left the
+        -- jobs section
+        if line:match("^%S") then
+            break
+        end
+
+        -- Job-level keys are indented by exactly one level
+        -- (2 or 4 spaces followed by a word and colon)
+        if line:match("^  %w[%w-]*:") or line:match("^    %w[%w-]*:") then
+            expectName = true
+            continue
+        end
+
+        -- The "name:" field directly under a job key
+        if expectName then
+            local jobName = line:match("^%s+name:%s*(.+)%s*$")
+            if jobName then
+                -- Skip names with ${{ }} expressions (matrix
+                -- names) since they aren't static check names
+                if not jobName:match("%${{") then
+                    table.insert(names, jobName)
+                end
+            end
+            expectName = false
+        end
+    end
+
+    return names
 end
 
-local function getReleaseBranchProtectionJson(): string
-    return [[{
-		"required_status_checks": {
-			"strict": true,
-			"checks": [
-				{ "context": "Validate PR title" },
-				{ "context": "Verify diff matches main" },
-				{ "context": "Check formatting" },
-				{ "context": "Run tests" },
-				{ "context": "Static analysis" },
-				{ "context": "Validate version" }
-			]
-		},
-		"enforce_admins": true,
-		"required_pull_request_reviews": null,
-		"restrictions": null,
-		"allow_force_pushes": false,
-		"allow_deletions": false
-	}]]
+local function buildBranchProtectionJson(checks: { string }): string
+    local checksEntries = {}
+    for _, check in checks do
+        table.insert(checksEntries, '\t\t\t{ "context": "' .. check .. '" }')
+    end
+
+    local checksJson = table.concat(checksEntries, ",\n")
+
+    return "{\n"
+        .. '\t"required_status_checks": {\n'
+        .. '\t\t"strict": true,\n'
+        .. '\t\t"checks": [\n'
+        .. checksJson
+        .. "\n\t\t]\n"
+        .. "\t},\n"
+        .. '\t"enforce_admins": true,\n'
+        .. '\t"required_pull_request_reviews": null,\n'
+        .. '\t"restrictions": null,\n'
+        .. '\t"allow_force_pushes": false,\n'
+        .. '\t"allow_deletions": false\n'
+        .. "}"
+end
+
+local function getMainBranchProtectionJson(projectPath: string): string
+    local ciPath = `{projectPath}/.github/workflows/ci.yml`
+    local checks = parseJobNames(ciPath)
+
+    if #checks == 0 then
+        -- Fallback to known defaults
+        checks = {
+            "Validate branch name",
+            "Check formatting",
+            "Run tests",
+            "Static analysis",
+            "Check version match",
+        }
+    end
+
+    return buildBranchProtectionJson(checks)
+end
+
+local function getReleaseBranchProtectionJson(projectPath: string): string
+    local releasePath = `{projectPath}/.github/workflows/release-checks.yml`
+    local checks = parseJobNames(releasePath)
+
+    if #checks == 0 then
+        -- Fallback to known defaults
+        checks = {
+            "Validate PR title",
+            "Verify diff matches main",
+            "Check formatting",
+            "Run tests",
+            "Static analysis",
+            "Validate version",
+        }
+    end
+
+    return buildBranchProtectionJson(checks)
 end
 
 local function getCopilotCodeReviewRulesetJson(): string
@@ -627,8 +701,10 @@ end
 local function setupBranchProtection(config: ProjectConfig)
     printStep("Setting up branch protection rules...")
 
-    local mainOk = applyBranchProtection(config.Owner, config.Name, "main", getMainBranchProtectionJson())
-    local releaseOk = applyBranchProtection(config.Owner, config.Name, "release", getReleaseBranchProtectionJson())
+    local mainOk =
+        applyBranchProtection(config.Owner, config.Name, "main", getMainBranchProtectionJson(config.ProjectPath))
+    local releaseOk =
+        applyBranchProtection(config.Owner, config.Name, "release", getReleaseBranchProtectionJson(config.ProjectPath))
 
     if not mainOk or not releaseOk then
         print(Chalk.yellow("Failed to set branch protection (requires GitHub Pro for private repos)."))
