@@ -4,3 +4,6 @@
 [submodule "Submodules/luau-cicd"]
 	path = Submodules/luau-cicd
 	url = https://github.com/horsenuggets/luau-cicd.git
+[submodule "Submodules/claude-md"]
+	path = Submodules/claude-md
+	url = https://github.com/horsenuggets/claude-md.git

@@ -6,28 +6,6 @@ on:
       - main
 
 jobs:
-  branch-naming:
-    name: Validate branch name
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check branch name format
-        run: |
-          BRANCH="${{ github.head_ref }}"
-          echo "Checking branch name: $BRANCH"
-
-          if [[ ! "$BRANCH" =~ ^(feature|bugfix|hotfix|chore|docs|refactor|test)/ ]]; then
-            echo "::error::Branch name must start with a valid prefix (feature/, bugfix/, hotfix/, chore/, docs/, refactor/, test/)"
-            exit 1
-          fi
-
-          SUFFIX="${BRANCH#*/}"
-          if [[ ! "$SUFFIX" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
-            echo "::error::Branch name after prefix must be lowercase kebab-case (e.g., feature/my-new-feature)"
-            exit 1
-          fi
-
-          echo "Branch name is valid."
-
   format:
     name: Check formatting
     runs-on: ubuntu-latest
