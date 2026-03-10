@@ -544,9 +544,9 @@ local function createReleaseBranch(config: ProjectConfig)
 end
 
 -- Parse job names from a GitHub Actions workflow YAML file.
--- Reads the "name:" field from each job under "jobs:".
--- Works with both 2-space and 4-space indented YAML by
--- detecting the indent unit from the first job key.
+-- Scans each job block under "jobs:" for a "name:" field.
+-- Works with any consistent indent size by detecting the
+-- indent unit from the first job key.
 local function parseJobNames(workflowPath: string): { string }
     local names: { string } = {}
     if not fs.isFile(workflowPath) then
@@ -599,18 +599,18 @@ local function parseJobNames(workflowPath: string): { string }
             continue
         end
 
-        -- Job name is at 2x indent unit, directly after a job key
+        -- Look for "name:" at 2x indent unit within the current job
         if inJob and spaces == indentUnit * 2 then
             local jobName = line:match("^%s+name:%s*(.+)%s*$")
             if jobName then
                 if not jobName:match("%${{") then
                     table.insert(names, jobName)
                 end
+                inJob = false
             end
-            inJob = false
         end
 
-        -- Any other line at job-key level resets the expectation
+        -- A line at job-key level or above resets the job context
         if spaces <= indentUnit then
             inJob = false
         end

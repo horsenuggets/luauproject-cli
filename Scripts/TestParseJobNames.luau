@@ -64,8 +64,8 @@ local function parseJobNames(workflowPath: string): { string }
                 if not jobName:match("%${{") then
                     table.insert(names, jobName)
                 end
+                inJob = false
             end
-            inJob = false
         end
 
         if spaces <= indentUnit then
