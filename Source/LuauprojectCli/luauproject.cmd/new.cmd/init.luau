@@ -545,7 +545,8 @@ end
 
 -- Parse job names from a GitHub Actions workflow YAML file.
 -- Reads the "name:" field from each job under "jobs:".
--- Works with both 2-space and 4-space indented YAML.
+-- Works with both 2-space and 4-space indented YAML by
+-- detecting the indent unit from the first job key.
 local function parseJobNames(workflowPath: string): { string }
     local names: { string } = {}
     if not fs.isFile(workflowPath) then
@@ -554,10 +555,10 @@ local function parseJobNames(workflowPath: string): { string }
 
     local content = fs.readFile(workflowPath)
     local inJobs = false
-    local expectName = false
+    local indentUnit = 0
+    local inJob = false
 
     for line in content:gmatch("[^\n]+") do
-        -- Detect the "jobs:" top-level key
         if line:match("^jobs:%s*$") then
             inJobs = true
             continue
@@ -573,24 +574,45 @@ local function parseJobNames(workflowPath: string): { string }
             break
         end
 
-        -- Job-level keys are indented by exactly one level
-        -- (2 or 4 spaces followed by a word and colon)
-        if line:match("^  %w[%w-]*:") or line:match("^    %w[%w-]*:") then
-            expectName = true
+        -- Skip blank lines
+        if line:match("^%s*$") then
             continue
         end
 
-        -- The "name:" field directly under a job key
-        if expectName then
+        -- Count leading spaces
+        local spaces = #(line:match("^( *)") or "")
+
+        -- Detect indent unit from the first indented line under
+        -- "jobs:" (this is a job key like "  format:" or
+        -- "    format:")
+        if indentUnit == 0 and spaces > 0 then
+            indentUnit = spaces
+        end
+
+        if indentUnit == 0 then
+            continue
+        end
+
+        -- Job keys are at exactly 1x indent unit
+        if spaces == indentUnit and line:match("^%s+[%w_-]+:%s*$") then
+            inJob = true
+            continue
+        end
+
+        -- Job name is at 2x indent unit, directly after a job key
+        if inJob and spaces == indentUnit * 2 then
             local jobName = line:match("^%s+name:%s*(.+)%s*$")
             if jobName then
-                -- Skip names with ${{ }} expressions (matrix
-                -- names) since they aren't static check names
                 if not jobName:match("%${{") then
                     table.insert(names, jobName)
                 end
             end
-            expectName = false
+            inJob = false
+        end
+
+        -- Any other line at job-key level resets the expectation
+        if spaces <= indentUnit then
+            inJob = false
         end
     end
 
