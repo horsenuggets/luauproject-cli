@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.7
+- Sync project configs with luau-package-template
+- Place private field after version instead of name in generated wally.toml
+
 ## 0.1.6
 - Dynamically load submodules from template .gitmodules instead of hard-coding them
 

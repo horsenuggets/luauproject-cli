@@ -285,9 +285,9 @@ local function updateWallyToml(config: ProjectConfig)
     content = content:gsub("luau%-package%-template", config.Name)
     content = content:gsub("A template for creating Luau packages%.", config.Description)
 
-    -- Add private = true for private packages (after the name line)
+    -- Add private = true for private packages (after the version line)
     if config.IsPrivatePackage then
-        content = content:gsub('(name = "[^"]+")\n', "%1\nprivate = true\n")
+        content = content:gsub('(version = "[^"]+")\n', "%1\nprivate = true\n")
     end
 
     fs.writeFile(wallyPath, content)
