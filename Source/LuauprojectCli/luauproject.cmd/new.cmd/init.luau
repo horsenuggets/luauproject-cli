@@ -543,44 +543,140 @@ local function createReleaseBranch(config: ProjectConfig)
     ShellHelpers.runOrFail("git", { "checkout", "main" }, config.ProjectPath)
 end
 
-local function getMainBranchProtectionJson(): string
-    return [[{
-		"required_status_checks": {
-			"strict": true,
-			"checks": [
-				{ "context": "Check formatting" },
-				{ "context": "Run tests" },
-				{ "context": "Static analysis" },
-				{ "context": "Validate branch name" }
-			]
-		},
-		"enforce_admins": true,
-		"required_pull_request_reviews": null,
-		"restrictions": null,
-		"allow_force_pushes": false,
-		"allow_deletions": false
-	}]]
+-- Parse job names from a GitHub Actions workflow YAML file.
+-- Scans each job block under "jobs:" for a "name:" field.
+-- Works with any consistent indent size by detecting the
+-- indent unit from the first job key.
+local function parseJobNames(workflowPath: string): { string }
+    local names: { string } = {}
+    if not fs.isFile(workflowPath) then
+        return names
+    end
+
+    local content = fs.readFile(workflowPath)
+    local inJobs = false
+    local indentUnit = 0
+    local inJob = false
+
+    for line in content:gmatch("[^\n]+") do
+        if line:match("^jobs:%s*$") then
+            inJobs = true
+            continue
+        end
+
+        if not inJobs then
+            continue
+        end
+
+        -- A non-indented line after "jobs:" means we left the
+        -- jobs section
+        if line:match("^%S") then
+            break
+        end
+
+        -- Skip blank lines
+        if line:match("^%s*$") then
+            continue
+        end
+
+        -- Count leading spaces
+        local spaces = #(line:match("^( *)") or "")
+
+        -- Detect indent unit from the first indented line under
+        -- "jobs:" (this is a job key like "  format:" or
+        -- "    format:")
+        if indentUnit == 0 and spaces > 0 then
+            indentUnit = spaces
+        end
+
+        if indentUnit == 0 then
+            continue
+        end
+
+        -- Job keys are at exactly 1x indent unit
+        if spaces == indentUnit and line:match("^%s+[%w_-]+:%s*$") then
+            inJob = true
+            continue
+        end
+
+        -- Look for "name:" at 2x indent unit within the current job
+        if inJob and spaces == indentUnit * 2 then
+            local jobName = line:match("^%s+name:%s*(.+)%s*$")
+            if jobName then
+                if not jobName:match("%${{") then
+                    table.insert(names, jobName)
+                end
+                inJob = false
+            end
+        end
+
+        -- A line at job-key level or above resets the job context
+        if spaces <= indentUnit then
+            inJob = false
+        end
+    end
+
+    return names
 end
 
-local function getReleaseBranchProtectionJson(): string
-    return [[{
-		"required_status_checks": {
-			"strict": true,
-			"checks": [
-				{ "context": "Validate PR title" },
-				{ "context": "Verify diff matches main" },
-				{ "context": "Check formatting" },
-				{ "context": "Run tests" },
-				{ "context": "Static analysis" },
-				{ "context": "Validate version" }
-			]
-		},
-		"enforce_admins": true,
-		"required_pull_request_reviews": null,
-		"restrictions": null,
-		"allow_force_pushes": false,
-		"allow_deletions": false
-	}]]
+local function buildBranchProtectionJson(checks: { string }): string
+    local checksEntries = {}
+    for _, check in checks do
+        table.insert(checksEntries, '\t\t\t{ "context": "' .. check .. '" }')
+    end
+
+    local checksJson = table.concat(checksEntries, ",\n")
+
+    return "{\n"
+        .. '\t"required_status_checks": {\n'
+        .. '\t\t"strict": true,\n'
+        .. '\t\t"checks": [\n'
+        .. checksJson
+        .. "\n\t\t]\n"
+        .. "\t},\n"
+        .. '\t"enforce_admins": true,\n'
+        .. '\t"required_pull_request_reviews": null,\n'
+        .. '\t"restrictions": null,\n'
+        .. '\t"allow_force_pushes": false,\n'
+        .. '\t"allow_deletions": false\n'
+        .. "}"
+end
+
+local function getMainBranchProtectionJson(projectPath: string): string
+    local ciPath = `{projectPath}/.github/workflows/ci.yml`
+    local checks = parseJobNames(ciPath)
+
+    if #checks == 0 then
+        -- Fallback to known defaults
+        checks = {
+            "Validate branch name",
+            "Check formatting",
+            "Run tests",
+            "Static analysis",
+            "Check version match",
+        }
+    end
+
+    return buildBranchProtectionJson(checks)
+end
+
+local function getReleaseBranchProtectionJson(projectPath: string): string
+    local releasePath = `{projectPath}/.github/workflows/release-checks.yml`
+    local checks = parseJobNames(releasePath)
+
+    if #checks == 0 then
+        -- Fallback to known defaults
+        checks = {
+            "Validate PR title",
+            "Verify diff matches main",
+            "Check formatting",
+            "Run tests",
+            "Static analysis",
+            "Validate version",
+        }
+    end
+
+    return buildBranchProtectionJson(checks)
 end
 
 local function getCopilotCodeReviewRulesetJson(): string
@@ -627,8 +723,10 @@ end
 local function setupBranchProtection(config: ProjectConfig)
     printStep("Setting up branch protection rules...")
 
-    local mainOk = applyBranchProtection(config.Owner, config.Name, "main", getMainBranchProtectionJson())
-    local releaseOk = applyBranchProtection(config.Owner, config.Name, "release", getReleaseBranchProtectionJson())
+    local mainOk =
+        applyBranchProtection(config.Owner, config.Name, "main", getMainBranchProtectionJson(config.ProjectPath))
+    local releaseOk =
+        applyBranchProtection(config.Owner, config.Name, "release", getReleaseBranchProtectionJson(config.ProjectPath))
 
     if not mainOk or not releaseOk then
         print(Chalk.yellow("Failed to set branch protection (requires GitHub Pro for private repos)."))
