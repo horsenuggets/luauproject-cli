@@ -6,6 +6,16 @@ license = "MIT"
 registry = "https://github.com/UpliftGames/wally-index"
 repository = "https://github.com/horsenuggets/luauproject-cli"
 realm = "shared"
+include = [
+    "default.project.json",
+    "init.luau",
+    "LICENSE",
+    "README.md",
+    "Source",
+    "Source/**",
+    "wally.toml",
+]
+exclude = ["**"]
 private = true
 
 [dependencies]
