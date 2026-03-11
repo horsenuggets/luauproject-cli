@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5
+- Fix Windows install test script
+- Parse CI job names dynamically for branch protection rules
+
 ## 0.1.4
 - Fix CI builds producing non-portable executables by updating Lune to 0.10.4-horse.6.0
 - Fix update command --version flag not being read correctly
