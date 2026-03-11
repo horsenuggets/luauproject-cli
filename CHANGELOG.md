@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.6
+- Dynamically load submodules from template .gitmodules instead of hard-coding them
+
 ## 0.1.5
 - Fix Windows install test script
 - Parse CI job names dynamically for branch protection rules

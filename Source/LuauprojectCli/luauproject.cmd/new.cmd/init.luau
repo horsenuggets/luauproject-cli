@@ -424,23 +424,74 @@ local function removeEmptySubmodules(config: ProjectConfig)
     end
 end
 
+local function parseGitmodules(projectPath: string): { { path: string, url: string } }
+    local gitmodulesPath = `{projectPath}/.gitmodules`
+    if not fs.isFile(gitmodulesPath) then
+        return {}
+    end
+
+    local content = fs.readFile(gitmodulesPath)
+    local submodules: { { path: string, url: string } } = {}
+    local current: { path: string?, url: string? } = {}
+
+    for line in content:gmatch("[^\n]+") do
+        if line:match("^%[submodule") then
+            if current.path and current.url then
+                table.insert(submodules, {
+                    path = current.path,
+                    url = current.url,
+                })
+            end
+            current = {}
+        end
+
+        local path = line:match("^%s*path%s*=%s*(.+)%s*$")
+        if path then
+            current.path = path
+        end
+
+        local url = line:match("^%s*url%s*=%s*(.+)%s*$")
+        if url then
+            -- Convert SSH URLs to HTTPS
+            local sshMatch = url:match("^git@github%.com:(.+)$")
+            if sshMatch then
+                url = `https://github.com/{sshMatch}`
+            end
+            current.url = url
+        end
+    end
+
+    if current.path and current.url then
+        table.insert(submodules, {
+            path = current.path,
+            url = current.url,
+        })
+    end
+
+    return submodules
+end
+
 local function setupSubmodules(config: ProjectConfig)
     printStep("Setting up git submodules...")
+
+    local submodules = parseGitmodules(config.ProjectPath)
     removeEmptySubmodules(config)
 
-    ShellHelpers.runOrFail("git", {
-        "submodule",
-        "add",
-        "https://github.com/horsenuggets/claude-md-luau.git",
-        "Submodules/claude-md-luau",
-    }, config.ProjectPath)
+    -- Also remove the .gitmodules file from the template since
+    -- git submodule add will recreate it
+    local gitmodulesPath = `{config.ProjectPath}/.gitmodules`
+    if fs.isFile(gitmodulesPath) then
+        fs.removeFile(gitmodulesPath)
+    end
 
-    ShellHelpers.runOrFail("git", {
-        "submodule",
-        "add",
-        "https://github.com/horsenuggets/luau-cicd.git",
-        "Submodules/luau-cicd",
-    }, config.ProjectPath)
+    for _, submodule in submodules do
+        ShellHelpers.runOrFail("git", {
+            "submodule",
+            "add",
+            submodule.url,
+            submodule.path,
+        }, config.ProjectPath)
+    end
 end
 
 local function copyWorkflows(config: ProjectConfig)
