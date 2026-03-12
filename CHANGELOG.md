@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.8
+- Add dev branch creation and protection to new project setup
+
 ## 0.1.7
 - Sync project configs with luau-package-template
 - Place private field after version instead of name in generated wally.toml
