@@ -587,6 +587,13 @@ local function configureRepoSettings(config: ProjectConfig)
     })
 end
 
+local function createDevBranch(config: ProjectConfig)
+    printStep("Creating dev branch...")
+    ShellHelpers.runOrFail("git", { "checkout", "-b", "dev" }, config.ProjectPath)
+    ShellHelpers.runOrFail("git", { "push", "-u", "origin", "dev" }, config.ProjectPath)
+    ShellHelpers.runOrFail("git", { "checkout", "main" }, config.ProjectPath)
+end
+
 local function createReleaseBranch(config: ProjectConfig)
     printStep("Creating release branch...")
     ShellHelpers.runOrFail("git", { "checkout", "-b", "release" }, config.ProjectPath)
@@ -711,6 +718,17 @@ local function getMainBranchProtectionJson(projectPath: string): string
     return buildBranchProtectionJson(checks)
 end
 
+local function getDevBranchProtectionJson(): string
+    return [[{
+		"required_status_checks": null,
+		"enforce_admins": true,
+		"required_pull_request_reviews": null,
+		"restrictions": null,
+		"allow_force_pushes": false,
+		"allow_deletions": false
+	}]]
+end
+
 local function getReleaseBranchProtectionJson(projectPath: string): string
     local releasePath = `{projectPath}/.github/workflows/release-checks.yml`
     local checks = parseJobNames(releasePath)
@@ -778,8 +796,9 @@ local function setupBranchProtection(config: ProjectConfig)
         applyBranchProtection(config.Owner, config.Name, "main", getMainBranchProtectionJson(config.ProjectPath))
     local releaseOk =
         applyBranchProtection(config.Owner, config.Name, "release", getReleaseBranchProtectionJson(config.ProjectPath))
+    local devOk = applyBranchProtection(config.Owner, config.Name, "dev", getDevBranchProtectionJson())
 
-    if not mainOk or not releaseOk then
+    if not mainOk or not releaseOk or not devOk then
         print(Chalk.yellow("Failed to set branch protection (requires GitHub Pro for private repos)."))
     end
 end
@@ -838,6 +857,7 @@ end
 local function setupGithubRepository(config: ProjectConfig)
     createGithubRepository(config)
     configureRepoSettings(config)
+    createDevBranch(config)
     createReleaseBranch(config)
     setupBranchProtection(config)
     setupCopilotCodeReview(config)
