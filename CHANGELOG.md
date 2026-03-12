@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.9
+- Update commandline-luau dependency to 0.0.11
+
 ## 0.1.8
 - Add dev branch creation and protection to new project setup
 
