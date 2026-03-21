@@ -11,6 +11,7 @@ local Chalk = require("@packages/Chalk")
 local Command = require("@packages/Commandline").Command
 local Flag = require("@packages/Commandline").Flag
 local GitHubHelpers = require("@luauprojectcli/Helpers/GitHubHelpers")
+local LogHelpers = require("@luauprojectcli/Helpers/LogHelpers")
 local PromptHelpers = require("@luauprojectcli/Helpers/PromptHelpers")
 local ShellHelpers = require("@luauprojectcli/Helpers/ShellHelpers")
 local StringHelpers = require("@luauprojectcli/Helpers/StringHelpers")
@@ -47,6 +48,13 @@ type ProjectConfig = {
     CreateGithubRepo: boolean,
     IsPrivate: boolean,
     IsPrivatePackage: boolean,
+}
+
+type SetupResults = {
+    BranchProtection: boolean?,
+    WallyAuth: boolean?,
+    CopilotReview: boolean?,
+    Warnings: { string },
 }
 
 ------------------------------------------------------------------------------------------
@@ -789,7 +797,7 @@ local function applyBranchProtection(owner: string, name: string, branch: string
     return ok
 end
 
-local function setupBranchProtection(config: ProjectConfig)
+local function setupBranchProtection(config: ProjectConfig): boolean
     printStep("Setting up branch protection rules...")
 
     local mainOk =
@@ -798,12 +806,15 @@ local function setupBranchProtection(config: ProjectConfig)
         applyBranchProtection(config.Owner, config.Name, "release", getReleaseBranchProtectionJson(config.ProjectPath))
     local devOk = applyBranchProtection(config.Owner, config.Name, "dev", getDevBranchProtectionJson())
 
-    if not mainOk or not releaseOk or not devOk then
+    local allOk = mainOk and releaseOk and devOk
+    if not allOk then
         print(Chalk.yellow("Failed to set branch protection (requires GitHub Pro for private repos)."))
     end
+
+    return allOk
 end
 
-local function setupCopilotCodeReview(config: ProjectConfig)
+local function setupCopilotCodeReview(config: ProjectConfig): boolean
     printStep("Setting up Copilot code review...")
 
     local tempFile = "/tmp/copilot-ruleset.json"
@@ -825,14 +836,16 @@ local function setupCopilotCodeReview(config: ProjectConfig)
     else
         print(Chalk.yellow("Failed to set up Copilot code review (requires Copilot subscription)."))
     end
+
+    return ok
 end
 
-local function setupWallyToken(config: ProjectConfig)
+local function setupWallyToken(config: ProjectConfig): boolean
     local wallyToken = WallyHelpers.getAuthToken()
 
     if not wallyToken then
         printWallyTokenWarning(config.Owner, config.Name)
-        return
+        return false
     end
 
     printStep("Setting up Wally authentication token...")
@@ -852,20 +865,43 @@ local function setupWallyToken(config: ProjectConfig)
     else
         print(Chalk.yellow("Failed to set Wally token. Set it manually in the repository settings."))
     end
+
+    return ok
 end
 
-local function setupGithubRepository(config: ProjectConfig)
+local function setupGithubRepository(config: ProjectConfig): SetupResults
+    local warnings: { string } = {}
+
     createGithubRepository(config)
     configureRepoSettings(config)
     createDevBranch(config)
     createReleaseBranch(config)
-    setupBranchProtection(config)
-    setupCopilotCodeReview(config)
 
+    local branchProtectionOk = setupBranchProtection(config)
+    if not branchProtectionOk then
+        table.insert(warnings, "Failed to set branch protection (requires GitHub Pro for private repos)")
+    end
+
+    local copilotReviewOk = setupCopilotCodeReview(config)
+    if not copilotReviewOk then
+        table.insert(warnings, "Failed to set up Copilot code review (requires Copilot subscription)")
+    end
+
+    local wallyAuthOk: boolean? = nil
     -- Skip Wally token setup for private packages (they won't be published to Wally)
     if not config.IsPrivatePackage then
-        setupWallyToken(config)
+        wallyAuthOk = setupWallyToken(config)
+        if not wallyAuthOk then
+            table.insert(warnings, "WALLY_AUTH_TOKEN not configured")
+        end
     end
+
+    return {
+        BranchProtection = branchProtectionOk,
+        WallyAuth = wallyAuthOk,
+        CopilotReview = copilotReviewOk,
+        Warnings = warnings,
+    }
 end
 
 ------------------------------------------------------------------------------------------
@@ -883,14 +919,42 @@ local function setupLocalProject(config: ProjectConfig)
     createInitialCommit(config)
 end
 
+local function logProjectCreation(config: ProjectConfig, results: SetupResults?)
+    pcall(function()
+        LogHelpers.appendEntry({
+            timestamp = LogHelpers.createTimestamp(),
+            args = process.args,
+            config = {
+                name = config.Name,
+                description = config.Description,
+                owner = config.Owner,
+                projectPath = config.ProjectPath,
+                createGithubRepo = config.CreateGithubRepo,
+                isPrivate = config.IsPrivate,
+                isPrivatePackage = config.IsPrivatePackage,
+            },
+            pid = process.id,
+            cwd = process.cwd,
+            setup = {
+                branchProtection = if results then results.BranchProtection else nil,
+                wallyAuth = if results then results.WallyAuth else nil,
+                copilotReview = if results then results.CopilotReview else nil,
+            },
+            warnings = if results then results.Warnings else {},
+        })
+    end)
+end
+
 local function createProject(config: ProjectConfig)
     printCreatingProject(config.Name, config.ProjectPath)
     setupLocalProject(config)
 
+    local results: SetupResults? = nil
     if config.CreateGithubRepo then
-        setupGithubRepository(config)
+        results = setupGithubRepository(config)
     end
 
+    logProjectCreation(config, results)
     printSuccess(config)
 end
 
