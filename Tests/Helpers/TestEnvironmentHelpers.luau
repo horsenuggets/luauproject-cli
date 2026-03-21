@@ -3,7 +3,7 @@
 TestEnvironmentHelpers
 
 Helper module for creating isolated test environments with temp directories. Provides
-utilities for file operations, command execution, and git operations within a sandboxed
+utilities for file operations, command execution, and Git operations within a sandboxed
 environment.
 
 --]]
