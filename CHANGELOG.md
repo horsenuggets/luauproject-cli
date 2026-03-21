@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.10
+- Add project creation logging to ~/.luauproject-cli/logs/project-creations.jsonl
+- Bump luau-lsp to 1.63.0-horse.1.4
+- Bump rojo to 7.7.0-rc.1-horse.0.6
+
 ## 0.1.9
 - Update commandline-luau dependency to 0.0.11
 
