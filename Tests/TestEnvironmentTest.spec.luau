@@ -77,7 +77,7 @@ return function()
         end)
 
         describe("initGit", function()
-            it("should initialize a git repository", function()
+            it("should initialize a Git repository", function()
                 local env = TestEnvironmentHelpers.create()
                 env.initGit()
                 expect(env.dirExists(".git")).to.equal(true)

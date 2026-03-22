@@ -276,7 +276,7 @@ local function cloneTemplate(projectPath: string)
 end
 
 local function initializeGitRepo(projectPath: string)
-    printStep("Initializing git repository...")
+    printStep("Initializing Git repository...")
     ShellHelpers.runOrFail("git", { "init" }, projectPath)
 end
 
@@ -480,13 +480,13 @@ local function parseGitmodules(projectPath: string): { { path: string, url: stri
 end
 
 local function setupSubmodules(config: ProjectConfig)
-    printStep("Setting up git submodules...")
+    printStep("Setting up Git submodules...")
 
     local submodules = parseGitmodules(config.ProjectPath)
     removeEmptySubmodules(config)
 
     -- Also remove the .gitmodules file from the template since
-    -- git submodule add will recreate it
+    -- Git submodule add will recreate it
     local gitmodulesPath = `{config.ProjectPath}/.gitmodules`
     if fs.isFile(gitmodulesPath) then
         fs.removeFile(gitmodulesPath)
