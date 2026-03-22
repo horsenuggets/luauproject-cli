@@ -12,6 +12,7 @@ local Command = require("@packages/Commandline").Command
 local Flag = require("@packages/Commandline").Flag
 local GitHubHelpers = require("@luauprojectcli/Helpers/GitHubHelpers")
 local LogHelpers = require("@luauprojectcli/Helpers/LogHelpers")
+local PathHelpers = require("@luauprojectcli/Helpers/PathHelpers")
 local PromptHelpers = require("@luauprojectcli/Helpers/PromptHelpers")
 local ShellHelpers = require("@luauprojectcli/Helpers/ShellHelpers")
 local StringHelpers = require("@luauprojectcli/Helpers/StringHelpers")
@@ -95,7 +96,7 @@ end
 
 local function printCreatingProject(name: string, projectPath: string)
     print()
-    print(`Creating project {Chalk.bold(Chalk.blueBright(name))} at {Chalk.dim(projectPath)}...`)
+    print(`Creating project {Chalk.bold(Chalk.blueBright(name))} at {Chalk.dim(PathHelpers.tildify(projectPath))}...`)
 end
 
 local function printStep(message: string)
@@ -106,7 +107,7 @@ local function printSuccess(config: ProjectConfig)
     print()
     print(Chalk.bold(Chalk.greenBright("Project created successfully!")))
     print()
-    print(`Location is {Chalk.dim(config.ProjectPath)}.`)
+    print(`Location is {Chalk.dim(PathHelpers.tildify(config.ProjectPath))}.`)
 
     if config.CreateGithubRepo then
         print(`Repository is at {Chalk.bold(Chalk.blueBright(`https://github.com/{config.Owner}/{config.Name}`))}.`)
@@ -177,7 +178,7 @@ local function getDescription(flags: any): string
     if flags.description.Value and flags.description.Value ~= "" then
         return flags.description.Value
     end
-    return PromptHelpers.prompt("Description", "A Luau package.")
+    return PromptHelpers.prompt("Description", "A Luau project.")
 end
 
 local function getOwner(flags: any): string
@@ -238,10 +239,47 @@ local function shouldBePrivatePackage(flags: any): boolean
     return PromptHelpers.promptConfirm("Private package? (will not publish to Wally)", false)
 end
 
-local function getBasePath(flags: any): string
-    -- LUAUPROJECT_CWD is set by the wrapper script when running from a different directory
-    local basePath = flags.path.Value or process.env.LUAUPROJECT_CWD or process.cwd
-    return basePath:gsub("/$", "")
+local function validateProjectPath(projectPath: string)
+    if fs.isDir(projectPath) then
+        local entries = fs.readDir(projectPath)
+        if #entries > 0 then
+            stdio.ewrite(Chalk.red(`Directory "{projectPath}" already exists and is not empty.\n`))
+            process.exit(1)
+        end
+    end
+
+    if fs.isFile(projectPath) then
+        stdio.ewrite(Chalk.red(`A file already exists at "{projectPath}".\n`))
+        process.exit(1)
+    end
+end
+
+local function getProjectPath(flags: any, name: string): string
+    -- LUAUPROJECT_CWD is set by the wrapper script when running from a different
+    -- directory
+    local basePath = process.env.LUAUPROJECT_CWD or process.cwd
+    local defaultPath = string.gsub(`{basePath}/{name}`, "/$", "")
+
+    if flags.path.Value and flags.path.Value ~= "" then
+        local projectPath = string.gsub(flags.path.Value, "/$", "")
+        validateProjectPath(projectPath)
+        return projectPath
+    end
+
+    local projectPath = PromptHelpers.prompt("Project location", PathHelpers.tildify(defaultPath))
+    if projectPath == "" then
+        projectPath = defaultPath
+    end
+
+    -- Expand ~ back to the home directory
+    if string.sub(projectPath, 1, 1) == "~" then
+        local home = process.env.HOME or ""
+        projectPath = home .. string.sub(projectPath, 2)
+    end
+
+    projectPath = string.gsub(projectPath, "/$", "")
+    validateProjectPath(projectPath)
+    return projectPath
 end
 
 local function gatherProjectConfig(flags: any): ProjectConfig
@@ -251,14 +289,14 @@ local function gatherProjectConfig(flags: any): ProjectConfig
     local createGithubRepo = shouldCreateGithubRepo(flags)
     local isPrivate = shouldBePrivate(flags, createGithubRepo)
     local isPrivatePackage = shouldBePrivatePackage(flags)
-    local basePath = getBasePath(flags)
+    local projectPath = getProjectPath(flags, name)
 
     return {
         Name = name,
         PascalName = StringHelpers.toPascalCase(name),
         Description = description,
         Owner = owner,
-        ProjectPath = `{basePath}/{name}`,
+        ProjectPath = projectPath,
         CreateGithubRepo = createGithubRepo,
         IsPrivate = isPrivate,
         IsPrivatePackage = isPrivatePackage,
@@ -503,7 +541,7 @@ local function setupSubmodules(config: ProjectConfig)
 end
 
 local function copyWorkflows(config: ProjectConfig)
-    printStep("Setting up GitHub workflows...")
+    printStep("Setting up CI workflows...")
 
     local workflowsSourceDir = `{config.ProjectPath}/Submodules/luau-cicd/Templates/workflows`
     local workflowsTargetDir = `{config.ProjectPath}/.github/workflows`
@@ -999,7 +1037,7 @@ return Command.new({
         Flag.new({
             Name = "path",
             Shorthand = "p",
-            Description = "Directory to create project in.",
+            Description = "Full path for the new project directory.",
             Type = "string",
         }),
         Flag.new({

@@ -21,6 +21,7 @@ local UNIT_TESTS = {
     { Name = "BuildTest", Func = require("@tests/BuildTest.spec") },
     { Name = "HelpersTest", Func = require("@tests/HelpersTest.spec") },
     { Name = "LogHelpersTest", Func = require("@tests/LogHelpersTest.spec") },
+    { Name = "PathValidationTest", Func = require("@tests/PathValidationTest.spec") },
     { Name = "StringsTest", Func = require("@tests/StringsTest.spec") },
     { Name = "TestEnvironmentTest", Func = require("@tests/TestEnvironmentTest.spec") },
 }
