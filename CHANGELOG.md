@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.11
+- Add interactive prompt for project location with default {cwd}/{name}
+- Add --path flag to specify full project path directly
+- Validate target directory and reject non-empty directories or file conflicts
+- Simplify displayed paths using ~ instead of full home directory
+- Change default project description to "A Luau project."
+- Rename "Setting up GitHub workflows..." to "Setting up CI workflows..."
+- Add PathValidationTest with 8 test cases
+- Add Scripts/Lint.luau for local static analysis
+
 ## 0.1.10
 - Add project creation logging to ~/.luauproject-cli/logs/project-creations.jsonl
 - Bump luau-lsp to 1.63.0-horse.1.4
