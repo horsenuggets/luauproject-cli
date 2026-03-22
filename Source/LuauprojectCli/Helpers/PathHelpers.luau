@@ -58,4 +58,27 @@ function PathHelpers.join(...: string): string
     return PathHelpers.normalize(result)
 end
 
+--[[
+	Replaces the home directory prefix with ~ for display purposes.
+
+	Example: "/Users/chris/git/my-project" -> "~/git/my-project"
+]]
+function PathHelpers.tildify(path: string): string
+    assert(type(path) == "string", "path must be a string")
+
+    local home = process.env.HOME
+    if not home or home == "" then
+        return path
+    end
+
+    -- Ensure home doesn't end with a separator
+    home = string.gsub(home, "[/\\]+$", "")
+
+    if string.sub(path, 1, #home) == home then
+        return "~" .. string.sub(path, #home + 1)
+    end
+
+    return path
+end
+
 return PathHelpers
