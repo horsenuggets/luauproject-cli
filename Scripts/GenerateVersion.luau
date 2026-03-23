@@ -18,7 +18,7 @@ local process = require("@lune/process")
 -- script.Parent = Scripts/, script.Parent.Parent = project root
 local PROJECT_ROOT = tostring(script.Parent.Parent)
 local VERSION_FILE = `{PROJECT_ROOT}/VERSION`
-local VERSION_MODULE = `{PROJECT_ROOT}/Source/LuauprojectCli/luauproject.cmd/__VERSION__.luau`
+local VERSION_MODULE = `{PROJECT_ROOT}/Source/LuauprojectCli/LuauprojectCommand/__VERSION__.luau`
 
 local function generateVersion()
     if not fs.isFile(VERSION_FILE) then

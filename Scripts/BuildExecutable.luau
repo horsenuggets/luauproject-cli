@@ -17,7 +17,7 @@ local process = require("@lune/process")
 -- script.Parent = Scripts/, script.Parent.Parent = project root
 local PROJECT_ROOT = tostring(script.Parent.Parent)
 local BUILD_DIR = `{PROJECT_ROOT}/Build`
-local ENTRY_POINT = `{PROJECT_ROOT}/Source/LuauprojectCli/luauproject-cli.luau`
+local ENTRY_POINT = `{PROJECT_ROOT}/Source/LuauprojectCli`
 local GENERATE_VERSION_SCRIPT = `{PROJECT_ROOT}/Scripts/GenerateVersion.luau`
 local OUTPUT_NAME = "luauproject"
 
@@ -192,8 +192,9 @@ local function buildExecutable()
         process.exit(1)
     end
 
-    if not fs.isFile(ENTRY_POINT) then
-        print(Chalk.red(`Entry point "{ENTRY_POINT}" not found.`))
+    local entryInitPath = `{ENTRY_POINT}/init.luau`
+    if not fs.isFile(entryInitPath) then
+        print(Chalk.red(`Entry point "{entryInitPath}" not found.`))
         process.exit(1)
     end
 
@@ -214,14 +215,13 @@ local function buildExecutable()
     end
 
     -- Strip shebang for building (lune build doesn't support shebangs).
-    -- Temp file goes in same directory so relative requires resolve correctly.
-    local entryContent = fs.readFile(ENTRY_POINT)
-    local entryDir = ENTRY_POINT:match("(.*/)")
-    local tempEntryPoint = `{entryDir}_build_entry.luau`
+    -- Replace init.luau in-place (will be restored from backups).
+    local entryContent = fs.readFile(entryInitPath)
     local strippedContent = entryContent:gsub("^#![^\n]*\n", "")
-    fs.writeFile(tempEntryPoint, strippedContent)
+    table.insert(backups, { path = entryInitPath, content = entryContent })
+    fs.writeFile(entryInitPath, strippedContent)
 
-    local args = { "build", tempEntryPoint, "--output", outputPath }
+    local args = { "build", ENTRY_POINT, "--output", outputPath }
 
     if target then
         table.insert(args, "--target")
@@ -235,10 +235,7 @@ local function buildExecutable()
 
     local ok, output = run("lune", args, { cwd = PROJECT_ROOT })
 
-    -- Clean up temporary entry point and restore patched files
-    if fs.isFile(tempEntryPoint) then
-        fs.removeFile(tempEntryPoint)
-    end
+    -- Restore patched files (including shebang-stripped init.luau)
     restoreFiles(backups)
 
     if ok then

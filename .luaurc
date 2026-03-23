@@ -2,7 +2,7 @@
   "aliases": {
     "devpackages": "./DevPackages/",
     "luauprojectcli": "./Source/LuauprojectCli/",
-    "lune": "~/.lune/.typedefs/0.10.4-horse.6.0/",
+    "lune": "~/.lune/.typedefs/0.10.4-horse.10.0/",
     "packages": "./Packages/",
     "tests": "./Tests/"
   },
