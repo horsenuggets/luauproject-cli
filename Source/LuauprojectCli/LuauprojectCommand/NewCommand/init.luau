@@ -1,6 +1,6 @@
 --[[
 
-new.cmd
+NewCommand
 
 Creates a new Luau project from the luau-package-template. Supports both interactive
 prompts and command-line flags.
@@ -353,9 +353,18 @@ local function updateProjectJson(config: ProjectConfig)
 end
 
 local function updateRootInit(config: ProjectConfig)
-    replaceInFile(`{config.ProjectPath}/init.luau`, {
-        { "LuauPackageTemplate", config.PascalName },
-    })
+    local initPath = `{config.ProjectPath}/init.luau`
+    if config.IsPrivatePackage then
+        -- Private packages are not importable via Wally, so the root
+        -- init.luau re-export is unnecessary
+        if fs.isFile(initPath) then
+            fs.removeFile(initPath)
+        end
+    else
+        replaceInFile(initPath, {
+            { "LuauPackageTemplate", config.PascalName },
+        })
+    end
 end
 
 local function updateReadme(config: ProjectConfig)

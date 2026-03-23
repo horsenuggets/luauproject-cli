@@ -1,6 +1,6 @@
 --[[
 
-install.cmd
+InstallCommand
 
 Installs the luauproject CLI by setting up the versioned directory structure. Copies the
 executable to ~/.luauproject-cli/versions, downloads the launcher to bin, sets up the current
@@ -12,7 +12,7 @@ local Chalk = require("@packages/Chalk")
 local Command = require("@packages/Commandline").Command
 local PathHelpers = require("@luauprojectcli/Helpers/PathHelpers")
 local UpdateHelpers = require("@luauprojectcli/Helpers/UpdateHelpers")
-local __VERSION__ = require("@luauprojectcli/luauproject.cmd/__VERSION__")
+local __VERSION__ = require("@luauprojectcli/LuauprojectCommand/__VERSION__")
 local fs = require("@lune/fs")
 local net = require("@lune/net")
 local process = require("@lune/process")
