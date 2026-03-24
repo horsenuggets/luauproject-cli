@@ -139,25 +139,6 @@ local function patchRelativeRequires(): { FileBackup }
         end
     end
 
-    -- Delete sub-package .luaurc files so @packages falls
-    -- through to the project root definition
-    local function deleteSubLuaurcs(dirPath: string)
-        for _, entry in fs.readDir(dirPath) do
-            local fullPath = `{dirPath}/{entry}`
-            if fs.isDir(fullPath) then
-                deleteSubLuaurcs(fullPath)
-            elseif entry == ".luaurc" then
-                table.insert(backups, { path = fullPath, content = fs.readFile(fullPath) })
-                fs.removeFile(fullPath)
-            end
-        end
-    end
-
-    local packagesIndexDir = `{PROJECT_ROOT}/Packages/_Index`
-    if fs.isDir(packagesIndexDir) then
-        deleteSubLuaurcs(packagesIndexDir)
-    end
-
     for _, entry in ALIAS_DIRS do
         local dirPath = `{PROJECT_ROOT}/{entry.dir}`
         if fs.isDir(dirPath) then
@@ -192,9 +173,8 @@ local function buildExecutable()
         process.exit(1)
     end
 
-    local entryInitPath = `{ENTRY_POINT}/init.luau`
-    if not fs.isFile(entryInitPath) then
-        print(Chalk.red(`Entry point "{entryInitPath}" not found.`))
+    if not fs.isDir(ENTRY_POINT) then
+        print(Chalk.red(`Entry point "{ENTRY_POINT}" not found.`))
         process.exit(1)
     end
 
@@ -213,13 +193,6 @@ local function buildExecutable()
     if fs.isFile(`{outputPath}.exe`) then
         fs.removeFile(`{outputPath}.exe`)
     end
-
-    -- Strip shebang for building (lune build doesn't support shebangs).
-    -- Replace init.luau in-place (will be restored from backups).
-    local entryContent = fs.readFile(entryInitPath)
-    local strippedContent = entryContent:gsub("^#![^\n]*\n", "")
-    table.insert(backups, { path = entryInitPath, content = entryContent })
-    fs.writeFile(entryInitPath, strippedContent)
 
     local args = { "build", ENTRY_POINT, "--output", outputPath }
 
