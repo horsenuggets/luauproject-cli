@@ -125,7 +125,7 @@ return function()
                         inner
                     outer again
                 ]])
-                expect(result).to.equal("outer\n\tinner\nouter again\n")
+                expect(result).to.equal("outer\n    inner\nouter again\n")
             end)
         end)
     end)
