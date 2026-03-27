@@ -1,6 +1,6 @@
 --[[
 
-BuildTest
+BuildTest.spec
 
 Tests that verify the CLI builds correctly and the built executable works as expected.
 

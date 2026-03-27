@@ -1,6 +1,6 @@
 --[[
 
-StringsTest
+StringsTest.spec
 
 Tests for the strings helper module including toKebabCase and toPascalCase conversions.
 
