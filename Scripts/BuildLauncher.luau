@@ -20,7 +20,7 @@ local BUILD_DIR = `{PROJECT_ROOT}/Build`
 local ENTRY_POINT = `{PROJECT_ROOT}/Source/Launcher/luauproject-launcher.luau`
 local OUTPUT_NAME = "luauproject-launcher"
 
-local function run(command: string, args: { string }, options: { cwd: string? }?): (boolean, string)
+local function run(command: string, args: { string }, options: process.ExecOptions?): (boolean, string)
     local result = process.exec(command, args, options)
     if result.ok then
         return true, result.stdout

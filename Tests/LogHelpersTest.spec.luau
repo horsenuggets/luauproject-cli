@@ -1,6 +1,6 @@
 --[[
 
-LogHelpersTest.spec
+LogHelpersTest
 
 Tests for the LogHelpers module covering entry building, file appending, directory
 creation, and handling of missing or nil values.

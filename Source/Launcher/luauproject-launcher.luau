@@ -2,10 +2,11 @@
 
 luauproject-launcher
 
-A thin launcher that delegates to the currently installed version of luauproject. On startup,
-it reads the current version from ~/.luauproject-cli/current and spawns the corresponding
-executable from the versions directory. It also cleans up old versions that are no longer
-in use.
+A thin launcher that delegates to the currently installed version
+of luauproject. On startup, it reads the current version from
+~/.luauproject-cli/current and spawns the corresponding executable
+from the versions directory. It also cleans up old versions that
+are no longer in use.
 
 --]]
 

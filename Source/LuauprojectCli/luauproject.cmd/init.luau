@@ -4,7 +4,7 @@ luauproject.cmd
 
 The root command for the luauproject CLI. Registers all subcommands.
 
-]]
+--]]
 
 local Commandline = require("@packages/Commandline")
 local __VERSION__ = require("@self/__VERSION__")
