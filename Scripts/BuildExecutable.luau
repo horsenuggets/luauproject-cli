@@ -21,7 +21,7 @@ local ENTRY_POINT = `{PROJECT_ROOT}/Source/LuauprojectCli/luauproject-cli.luau`
 local GENERATE_VERSION_SCRIPT = `{PROJECT_ROOT}/Scripts/GenerateVersion.luau`
 local OUTPUT_NAME = "luauproject"
 
-local function run(command: string, args: { string }, options: { cwd: string? }?): (boolean, string)
+local function run(command: string, args: { string }, options: process.ExecOptions?): (boolean, string)
     local result = process.exec(command, args, options)
     if result.ok then
         return true, result.stdout
@@ -69,7 +69,7 @@ local function patchRelativeRequires(): { FileBackup }
         local originalContent = content
         local modified = false
         local fileName = filePath:match("([^/]+)$") or ""
-        local isInit = fileName == "init.luau"
+        local _isInit = fileName == "init.luau"
         local fileDir = getParentDir(projectRelPath)
 
         -- Replace @self requires (used in init.luau files, @self

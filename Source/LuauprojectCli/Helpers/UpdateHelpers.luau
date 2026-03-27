@@ -2,8 +2,8 @@
 
 UpdateHelpers
 
-Helper functions for the update command. Handles GitHub API interactions, version comparison,
-and binary downloads.
+Helper functions for the update command. Handles GitHub API
+interactions, version comparison, and binary downloads.
 
 --]]
 
@@ -43,8 +43,8 @@ export type Release = {
 local UpdateHelpers = {}
 
 --[[
-	Returns the binary name for the current platform.
-	Example: "luauproject-macos-aarch64" or "luauproject-linux-x86_64"
+    Returns the binary name for the current platform.
+    Example: "luauproject-macos-aarch64" or "luauproject-linux-x86_64"
 ]]
 function UpdateHelpers.getBinaryName(): string
     local os = process.os
@@ -61,8 +61,8 @@ function UpdateHelpers.getBinaryName(): string
 end
 
 --[[
-	Fetches the latest release from GitHub.
-	Returns the release data or nil if the request failed.
+    Fetches the latest release from GitHub.
+    Returns the release data or nil if the request failed.
 ]]
 function UpdateHelpers.getLatestRelease(): Release?
     local url = `{API_BASE}/{REPOSITORY}/releases/latest`
@@ -91,8 +91,8 @@ function UpdateHelpers.getLatestRelease(): Release?
 end
 
 --[[
-	Fetches a specific release by version tag from GitHub.
-	Returns the release data or nil if the request failed.
+    Fetches a specific release by version tag from GitHub.
+    Returns the release data or nil if the request failed.
 ]]
 function UpdateHelpers.getRelease(version: string): Release?
     assert(type(version) == "string", "version must be a string")
@@ -123,8 +123,8 @@ function UpdateHelpers.getRelease(version: string): Release?
 end
 
 --[[
-	Finds the download URL for the current platform's binary in a release.
-	Returns the URL or nil if not found.
+    Finds the download URL for the current platform's binary in a release.
+    Returns the URL or nil if not found.
 ]]
 function UpdateHelpers.findBinaryUrl(release: Release): string?
     assert(type(release) == "table", "release must be a table")
@@ -141,8 +141,8 @@ function UpdateHelpers.findBinaryUrl(release: Release): string?
 end
 
 --[[
-	Downloads a file from a URL to a destination path.
-	Returns true if successful, false otherwise.
+    Downloads a file from a URL to a destination path.
+    Returns true if successful, false otherwise.
 ]]
 function UpdateHelpers.downloadFile(url: string, destPath: string): boolean
     assert(type(url) == "string", "url must be a string")
@@ -176,8 +176,8 @@ function UpdateHelpers.downloadFile(url: string, destPath: string): boolean
 end
 
 --[[
-	Parses a semantic version string into its components.
-	Returns major, minor, patch as numbers, or nil for all if invalid.
+    Parses a semantic version string into its components.
+    Returns major, minor, patch as numbers, or nil for all if invalid.
 ]]
 function UpdateHelpers.parseVersion(versionString: string): (number?, number?, number?)
     assert(type(versionString) == "string", "versionString must be a string")
@@ -196,12 +196,12 @@ function UpdateHelpers.parseVersion(versionString: string): (number?, number?, n
 end
 
 --[[
-	Compares two version strings.
-	Returns:
-	  1 if version1 > version2
-	  0 if version1 == version2
-	  -1 if version1 < version2
-	  nil if either version is invalid
+    Compares two version strings.
+    Returns:
+      1 if version1 > version2
+      0 if version1 == version2
+      -1 if version1 < version2
+      nil if either version is invalid
 ]]
 function UpdateHelpers.compareVersions(version1: string, version2: string): number?
     assert(type(version1) == "string", "version1 must be a string")
@@ -230,7 +230,7 @@ function UpdateHelpers.compareVersions(version1: string, version2: string): numb
 end
 
 --[[
-	Returns the installation directory paths.
+    Returns the installation directory paths.
 ]]
 function UpdateHelpers.getInstallPaths(): {
     installDir: string,
@@ -250,8 +250,8 @@ function UpdateHelpers.getInstallPaths(): {
 end
 
 --[[
-	Reads the currently installed version from the current file.
-	Returns the version string or nil if not found.
+    Reads the currently installed version from the current file.
+    Returns the version string or nil if not found.
 ]]
 function UpdateHelpers.getCurrentVersion(): string?
     local paths = UpdateHelpers.getInstallPaths()

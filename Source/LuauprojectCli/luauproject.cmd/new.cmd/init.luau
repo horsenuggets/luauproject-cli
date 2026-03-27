@@ -5,7 +5,7 @@ new.cmd
 Creates a new Luau project from the luau-package-template. Supports both interactive
 prompts and command-line flags.
 
-]]
+--]]
 
 local Chalk = require("@packages/Chalk")
 local Command = require("@packages/Commandline").Command
@@ -766,13 +766,13 @@ end
 
 local function getDevBranchProtectionJson(): string
     return [[{
-		"required_status_checks": null,
-		"enforce_admins": true,
-		"required_pull_request_reviews": null,
-		"restrictions": null,
-		"allow_force_pushes": false,
-		"allow_deletions": false
-	}]]
+        "required_status_checks": null,
+        "enforce_admins": true,
+        "required_pull_request_reviews": null,
+        "restrictions": null,
+        "allow_force_pushes": false,
+        "allow_deletions": false
+    }]]
 end
 
 local function getReleaseBranchProtectionJson(projectPath: string): string
@@ -796,25 +796,25 @@ end
 
 local function getCopilotCodeReviewRulesetJson(): string
     return [[{
-		"name": "Copilot Code Review",
-		"target": "branch",
-		"enforcement": "active",
-		"conditions": {
-			"ref_name": {
-				"include": ["refs/heads/main", "refs/heads/release"],
-				"exclude": []
-			}
-		},
-		"rules": [
-			{
-				"type": "copilot_code_review",
-				"parameters": {
-					"review_draft_pull_requests": false,
-					"review_on_push": true
-				}
-			}
-		]
-	}]]
+        "name": "Copilot Code Review",
+        "target": "branch",
+        "enforcement": "active",
+        "conditions": {
+            "ref_name": {
+                "include": ["refs/heads/main", "refs/heads/release"],
+                "exclude": []
+            }
+        },
+        "rules": [
+            {
+                "type": "copilot_code_review",
+                "parameters": {
+                    "review_draft_pull_requests": false,
+                    "review_on_push": true
+                }
+            }
+        ]
+    }]]
 end
 
 local function applyBranchProtection(owner: string, name: string, branch: string, protectionJson: string): boolean

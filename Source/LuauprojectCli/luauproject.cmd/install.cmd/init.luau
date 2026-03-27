@@ -2,9 +2,10 @@
 
 install.cmd
 
-Installs the luauproject CLI by setting up the versioned directory structure. Copies the
-executable to ~/.luauproject-cli/versions, downloads the launcher to bin, sets up the current
-version pointer, and adds bin to the user's PATH.
+Installs the luauproject CLI by setting up the versioned directory
+structure. Copies the executable to ~/.luauproject-cli/versions,
+downloads the launcher to bin, sets up the current version pointer,
+and adds bin to the user's PATH.
 
 --]]
 

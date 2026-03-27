@@ -113,18 +113,18 @@ return function()
         describe("dedent", function()
             it("should remove leading indentation", function()
                 local result = TestEnvironmentHelpers.dedent([[
-					hello
-					world
-				]])
+                    hello
+                    world
+                ]])
                 expect(result).to.equal("hello\nworld\n")
             end)
 
             it("should preserve relative indentation", function()
                 local result = TestEnvironmentHelpers.dedent([[
-					outer
-						inner
-					outer again
-				]])
+                    outer
+                        inner
+                    outer again
+                ]])
                 expect(result).to.equal("outer\n\tinner\nouter again\n")
             end)
         end)

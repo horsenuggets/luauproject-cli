@@ -1,6 +1,6 @@
 --[[
 
-PathValidationTest.spec
+PathValidationTest
 
 Tests for project path validation in the new command. Verifies that the CLI correctly
 rejects non-empty directories, file conflicts, and validates the --path flag.
