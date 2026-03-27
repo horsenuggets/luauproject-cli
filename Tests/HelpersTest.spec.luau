@@ -1,6 +1,6 @@
 --[[
 
-HelpersTest
+HelpersTest.spec
 
 Tests for shell helper module including command execution and availability checks.
 

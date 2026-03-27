@@ -4,34 +4,19 @@
 
 GenerateVersion
 
-Reads the VERSION file and generates a Version.luau module that returns the version
-string. This is used to embed the version at build time since compiled executables cannot
-read files.
+Reads the VERSION file and generates a version module for embedding at build time.
+
+[Usage] ./Scripts/GenerateVersion.luau
 
 --]]
 
-local Chalk = require("@packages/Chalk")
-local fs = require("@lune/fs")
-local process = require("@lune/process")
-
--- Use script global to resolve paths relative to this script's location
--- script.Parent = Scripts/, script.Parent.Parent = project root
-local PROJECT_ROOT = tostring(script.Parent.Parent)
-local VERSION_FILE = `{PROJECT_ROOT}/VERSION`
-local VERSION_MODULE = `{PROJECT_ROOT}/Source/LuauprojectCli/luauproject.cmd/__VERSION__.luau`
+local Toolkit = require("@packages/Commandline").Toolkit
 
 local function generateVersion()
-    if not fs.isFile(VERSION_FILE) then
-        print("VERSION file not found.")
-        process.exit(1)
-    end
-
-    local version = fs.readFile(VERSION_FILE):gsub("%s+", "")
-
-    local versionModule = `return "{version}"\n`
-    fs.writeFile(VERSION_MODULE, versionModule)
-
-    print(`Generated version module with version {Chalk.bold(Chalk.blueBright(version))}.`)
+    Toolkit.generateVersion({
+        VersionFile = "VERSION",
+        OutputPath = "Source/LuauprojectCli/luauproject.cmd/__VERSION__.luau",
+    })
 end
 
 generateVersion()

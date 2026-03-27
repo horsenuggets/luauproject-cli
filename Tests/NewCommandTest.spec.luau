@@ -1,6 +1,6 @@
 --[[
 
-NewCommandTest
+NewCommandTest.spec
 
 Integration tests for the `luauproject new` command. These tests run in an isolated Docker
 environment to ensure the CLI works correctly without affecting the host system.

@@ -1,6 +1,6 @@
 --[[
 
-TestEnvironmentTest
+TestEnvironmentTest.spec
 
 Tests for the TestEnvironmentHelpers module to ensure it properly creates isolated test
 environments.

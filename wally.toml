@@ -20,7 +20,7 @@ private = true
 
 [dependencies]
 Chalk = "horsenuggets/chalk-luau@0.1.0"
-Commandline = "horsenuggets/commandline-luau@0.0.11"
+Commandline = "horsenuggets/commandline-luau@0.0.14"
 
 [dev-dependencies]
 Testable = "horsenuggets/testable@0.1.0"
