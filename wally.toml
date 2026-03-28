@@ -19,7 +19,7 @@ exclude = ["**"]
 private = true
 
 [dependencies]
-Chalk = "horsenuggets/chalk-luau@0.1.0"
+Chalk = "horsenuggets/chalk-luau@1.0.0"
 Commandline = "horsenuggets/commandline-luau@0.0.14"
 
 [dev-dependencies]
