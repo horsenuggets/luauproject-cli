@@ -30,7 +30,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          submodules: true
 
       - name: Check diff with main
         run: |
@@ -62,27 +61,6 @@ jobs:
       - name: Check formatting
         run: ./Submodules/luau-cicd/Scripts/CheckFormatting.luau
 
-  analyze:
-    name: Static analysis
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Setup Rokit
-        uses: CompeyDev/setup-rokit@v0.1.2
-
-      - name: Install dependencies
-        run: wally install
-
-      - name: Setup Lune typedefs
-        run: lune setup
-
-      - name: Run static analysis
-        run: echo "Skipping static analysis - CLI tool uses Lune APIs that don't have full typedef support"
-
   test:
     name: Run tests
     runs-on: ubuntu-latest
@@ -99,10 +77,34 @@ jobs:
         run: wally install
 
       - name: Build executable
-        run: lune run Scripts/BuildExecutable.luau linux-x86_64
+        run: ./Scripts/BuildExecutable.luau linux-x86_64
 
-      - name: Run unit tests
-        run: lune run Scripts/RunTests.luau --no-docker
+      - name: Run tests
+        run: ./Scripts/RunTests.luau --no-docker
+
+  analyze:
+    name: Static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Rokit
+        uses: CompeyDev/setup-rokit@v0.1.2
+
+      - name: Install dependencies
+        run: wally install
+
+      - name: Setup Lune typedefs
+        run: lune setup --no-update-luaurc
+
+      - name: Generate version module
+        run: ./Scripts/GenerateVersion.luau
+
+      - name: Run static analysis
+        run: ./Submodules/luau-cicd/Scripts/RunStaticAnalysis.luau lune
 
   json-format:
     name: Check JSON format
@@ -143,8 +145,14 @@ jobs:
       - name: Check version update
         run: ./Submodules/luau-cicd/Scripts/EnsureProperVersionUpdate.luau
 
+      - name: Check version match
+        run: ./Submodules/luau-cicd/Scripts/CheckVersionMatch.luau
+
       - name: Check changelog entry
         run: ./Submodules/luau-cicd/Scripts/CheckChangelogVersion.luau
+
+      - name: Check changelog format
+        run: ./Submodules/luau-cicd/Scripts/CheckChangelogFormat.luau
 
       - name: Verify PR title matches VERSION
         run: |

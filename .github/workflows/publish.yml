@@ -32,7 +32,7 @@ jobs:
         run: wally install
 
       - name: Build executable
-        run: lune run Scripts/BuildExecutable.luau ${{ matrix.target }}
+        run: ./Scripts/BuildExecutable.luau ${{ matrix.target }}
 
       - name: Rename binary
         run: |
@@ -74,7 +74,7 @@ jobs:
         run: wally install
 
       - name: Build launcher
-        run: lune run Scripts/BuildLauncher.luau ${{ matrix.target }}
+        run: ./Scripts/BuildLauncher.luau ${{ matrix.target }}
 
       - name: Rename binary
         run: |
