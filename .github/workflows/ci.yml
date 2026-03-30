@@ -217,3 +217,25 @@ jobs:
 
       - name: Check for tabs
         run: ./Submodules/luau-cicd/Scripts/CheckNoTabs.luau
+
+  docker-test:
+    name: Docker integration tests
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Rokit
+        uses: CompeyDev/setup-rokit@v0.1.2
+
+      - name: Install dependencies
+        run: wally install
+
+      - name: Build executable
+        run: ./Scripts/BuildExecutable.luau linux-x86_64
+
+      - name: Run Docker tests
+        run: ./Scripts/RunTests.luau --docker

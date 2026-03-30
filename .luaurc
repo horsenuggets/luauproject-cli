@@ -1,24 +1,24 @@
 {
-  "aliases": {
-    "devpackages": "./DevPackages/",
-    "luauprojectcli": "./Source/LuauprojectCli/",
-    "lune": "~/.lune/.typedefs/0.10.4-horse.14.2/",
-    "packages": "./Packages/",
-    "tests": "./Tests/"
-  },
-  "globals": [
-    "afterAll",
-    "afterEach",
-    "beforeAll",
-    "beforeEach",
-    "describe",
-    "elapsedTime",
-    "expect",
-    "fail",
-    "fdescribe",
-    "fit",
-    "it",
-    "xdescribe",
-    "xit"
-  ]
+    "aliases": {
+        "devpackages": "./DevPackages/",
+        "luauprojectcli": "./Source/LuauprojectCli/",
+        "lune": "~/.lune/.typedefs/0.10.4-horse.14.2/",
+        "packages": "./Packages/",
+        "tests": "./Tests/"
+    },
+    "globals": [
+        "afterAll",
+        "afterEach",
+        "beforeAll",
+        "beforeEach",
+        "describe",
+        "elapsedTime",
+        "expect",
+        "fail",
+        "fdescribe",
+        "fit",
+        "it",
+        "xdescribe",
+        "xit"
+    ]
 }
