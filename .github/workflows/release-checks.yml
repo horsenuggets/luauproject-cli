@@ -60,7 +60,7 @@ jobs:
         uses: CompeyDev/setup-rokit@v0.1.2
 
       - name: Check formatting
-        run: lune run ./Submodules/luau-cicd/Scripts/CheckFormatting.luau
+        run: ./Submodules/luau-cicd/Scripts/CheckFormatting.luau
 
   analyze:
     name: Static analysis
@@ -118,10 +118,10 @@ jobs:
         uses: CompeyDev/setup-rokit@v0.1.2
 
       - name: Check version update
-        run: lune run ./Submodules/luau-cicd/Scripts/EnsureProperVersionUpdate.luau
+        run: ./Submodules/luau-cicd/Scripts/EnsureProperVersionUpdate.luau
 
       - name: Check changelog entry
-        run: lune run ./Submodules/luau-cicd/Scripts/CheckChangelogVersion.luau
+        run: ./Submodules/luau-cicd/Scripts/CheckChangelogVersion.luau
 
       - name: Verify PR title matches VERSION
         run: |

@@ -15,13 +15,13 @@ local NATIVE_SEP = if IS_WINDOWS then "\\" else "/"
 local PathHelpers = {}
 
 --[[
-	Normalizes a path to use the native separator for the current OS and removes duplicate
-	separators.
+    Normalizes a path to use the native separator for the current OS and removes duplicate
+    separators.
 
-	Examples:
-	- On Windows: "C:/Users/name/.config" -> "C:\Users\name\.config"
-	- On Unix: "/home/user//config" -> "/home/user/config"
-	- Mixed: "C:\Users/name//.config" -> "C:\Users\name\.config" (Windows)
+    Examples:
+    - On Windows: "C:/Users/name/.config" -> "C:\Users\name\.config"
+    - On Unix: "/home/user//config" -> "/home/user/config"
+    - Mixed: "C:\Users/name//.config" -> "C:\Users\name\.config" (Windows)
 ]]
 function PathHelpers.normalize(path: string): string
     assert(type(path) == "string", "path must be a string")
@@ -46,9 +46,9 @@ function PathHelpers.normalize(path: string): string
 end
 
 --[[
-	Joins path segments using the native separator.
+    Joins path segments using the native separator.
 
-	Example: PathHelpers.join("home", "user", ".config") -> "home/user/.config" (Unix)
+    Example: PathHelpers.join("home", "user", ".config") -> "home/user/.config" (Unix)
 ]]
 function PathHelpers.join(...: string): string
     local parts = { ... }
@@ -59,9 +59,9 @@ function PathHelpers.join(...: string): string
 end
 
 --[[
-	Replaces the home directory prefix with ~ for display purposes.
+    Replaces the home directory prefix with ~ for display purposes.
 
-	Example: "/Users/chris/git/my-project" -> "~/git/my-project"
+    Example: "/Users/chris/git/my-project" -> "~/git/my-project"
 ]]
 function PathHelpers.tildify(path: string): string
     assert(type(path) == "string", "path must be a string")

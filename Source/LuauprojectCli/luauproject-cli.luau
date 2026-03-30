@@ -6,7 +6,7 @@ luauproject-cli
 
 The entry point for building the luauproject CLI executable.
 
-]]
+--]]
 
 local process = require("@lune/process")
 

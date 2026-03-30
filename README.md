@@ -37,7 +37,7 @@ owner, and GitHub options.
 | Short | Long            | If not provided   | Description                                      |
 | ----- | --------------- | ----------------- | ------------------------------------------------ |
 | `-n`  | `--name`        | Prompts           | Project name in kebab-case                       |
-| `-d`  | `--description` | Prompts           | Project description (default: "A Luau package.") |
+| `-d`  | `--description` | Prompts           | Project description (default: "A Luau project.") |
 | `-o`  | `--owner`       | Prompts           | GitHub owner or organization                     |
 | `-p`  | `--path`        | Current directory | Directory to create project in                   |
 |       | `--github`      | Prompts           | Create a GitHub repository (skips confirmation)  |

@@ -2,8 +2,9 @@
 
 update.cmd
 
-Updates the luauproject CLI to the latest version or a specified version. Downloads the new
-version to the versions directory and updates the current version pointer.
+Updates the luauproject CLI to the latest version or a specified
+version. Downloads the new version to the versions directory and
+updates the current version pointer.
 
 --]]
 
