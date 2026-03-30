@@ -1,6 +1,6 @@
 --[[
 
-update.cmd
+UpdateCommand
 
 Updates the luauproject CLI to the latest version or a specified
 version. Downloads the new version to the versions directory and
@@ -12,7 +12,7 @@ local Chalk = require("@packages/Chalk")
 local Command = require("@packages/Commandline").Command
 local Flag = require("@packages/Commandline").Flag
 local UpdateHelpers = require("@luauprojectcli/Helpers/UpdateHelpers")
-local __VERSION__ = require("@luauprojectcli/luauproject.cmd/__VERSION__")
+local __VERSION__ = require("@luauprojectcli/LuauprojectCommand/__VERSION__")
 local fs = require("@lune/fs")
 local process = require("@lune/process")
 local stdio = require("@lune/stdio")

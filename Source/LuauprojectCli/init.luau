@@ -2,20 +2,21 @@
 
 --[[
 
-luauproject-cli
+LuauprojectCli
 
-The entry point for building the luauproject CLI executable.
+The entry point for the luauproject CLI. Registers all commands and executes
+with process arguments.
 
 --]]
 
 local process = require("@lune/process")
 
 local Commandline = require("@packages/Commandline")
-local luauproject_cmd = require("./luauproject.cmd")
+local LuauprojectCommand = require("@luauprojectcli/LuauprojectCommand")
 
-local function run()
-    Commandline.registerCommand(luauproject_cmd)
-    luauproject_cmd:Execute(process.args)
+local function luauprojectCli()
+    Commandline.registerCommand(LuauprojectCommand)
+    LuauprojectCommand:Execute(process.args)
 end
 
-run()
+luauprojectCli()
