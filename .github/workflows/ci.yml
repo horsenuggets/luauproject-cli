@@ -43,7 +43,7 @@ jobs:
         uses: CompeyDev/setup-rokit@v0.1.2
 
       - name: Check formatting
-        run: lune run ./Submodules/luau-cicd/Scripts/CheckFormatting.luau
+        run: ./Submodules/luau-cicd/Scripts/CheckFormatting.luau
 
   test:
     name: Run tests
@@ -100,7 +100,7 @@ jobs:
         uses: CompeyDev/setup-rokit@v0.1.2
 
       - name: Check changelog format
-        run: lune run ./Submodules/luau-cicd/Scripts/CheckChangelogFormat.luau
+        run: ./Submodules/luau-cicd/Scripts/CheckChangelogFormat.luau
 
   rokit-format:
     name: Check rokit.toml format
@@ -115,7 +115,7 @@ jobs:
         uses: CompeyDev/setup-rokit@v0.1.2
 
       - name: Check rokit.toml format
-        run: lune run ./Submodules/luau-cicd/Scripts/CheckRokitFormat.luau
+        run: ./Submodules/luau-cicd/Scripts/CheckRokitFormat.luau
 
   wally-format:
     name: Check wally.toml format
@@ -130,7 +130,7 @@ jobs:
         uses: CompeyDev/setup-rokit@v0.1.2
 
       - name: Check wally.toml format
-        run: lune run ./Submodules/luau-cicd/Scripts/CheckWallyFormat.luau
+        run: ./Submodules/luau-cicd/Scripts/CheckWallyFormat.luau
 
   file-headers:
     name: Check file headers
@@ -145,7 +145,7 @@ jobs:
         uses: CompeyDev/setup-rokit@v0.1.2
 
       - name: Check file headers
-        run: lune run ./Submodules/luau-cicd/Scripts/CheckFileHeaders.luau
+        run: ./Submodules/luau-cicd/Scripts/CheckFileHeaders.luau
 
   luaurc-format:
     name: Check .luaurc format
@@ -160,7 +160,7 @@ jobs:
         uses: CompeyDev/setup-rokit@v0.1.2
 
       - name: Check .luaurc format
-        run: lune run ./Submodules/luau-cicd/Scripts/CheckLuaurcFormat.luau
+        run: ./Submodules/luau-cicd/Scripts/CheckLuaurcFormat.luau
 
   json-format:
     name: Check JSON format
@@ -183,7 +183,7 @@ jobs:
         uses: CompeyDev/setup-rokit@v0.1.2
 
       - name: Check JSON format
-        run: lune run ./Submodules/luau-cicd/Scripts/CheckJsonFormat.luau
+        run: ./Submodules/luau-cicd/Scripts/CheckJsonFormat.luau
 
   no-tabs:
     name: Check for tabs
@@ -198,4 +198,4 @@ jobs:
         uses: CompeyDev/setup-rokit@v0.1.2
 
       - name: Check for tabs
-        run: lune run ./Submodules/luau-cicd/Scripts/CheckNoTabs.luau
+        run: ./Submodules/luau-cicd/Scripts/CheckNoTabs.luau
