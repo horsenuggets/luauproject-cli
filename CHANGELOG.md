@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.13
+- Bump commandline-luau to 0.0.15 (adds PowerShell completions with context-aware filtering)
+
 ## 0.1.12
 - Bump lune to 0.10.4-horse.14.0
 - Replace lune run with direct script execution and fix script permissions
