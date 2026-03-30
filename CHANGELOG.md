@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.12
+- Bump lune to 0.10.4-horse.14.0
+- Replace lune run with direct script execution and fix script permissions
+- Update luau-cicd submodule with executable scripts
+- Update default description in README from "A Luau package." to "A Luau project."
+
 ## 0.1.11
 - Add interactive prompt for project location with default {cwd}/{name}
 - Add --path flag to specify full project path directly
