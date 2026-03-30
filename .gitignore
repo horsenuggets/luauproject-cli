@@ -20,3 +20,8 @@ Packages
 sourcemap.json
 /TODO.md
 Tools
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
