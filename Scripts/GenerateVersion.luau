@@ -15,7 +15,7 @@ local Toolkit = require("@packages/Commandline").Toolkit
 local function generateVersion()
     Toolkit.generateVersion({
         VersionFile = "VERSION",
-        OutputPath = "Source/LuauprojectCli/luauproject.cmd/__VERSION__.luau",
+        OutputPath = "Source/LuauprojectCli/LuauprojectCommand/__VERSION__.luau",
     })
 end
 

@@ -31,14 +31,14 @@ ENV PATH="/root/.rokit/bin:${PATH}"
 # Trust all tools used by the luau-package-template and install Lune/Wally globally
 RUN rokit trust horsenuggets/lune && \
     rokit trust horsenuggets/wally && \
-    rokit trust johnnymorganz/luau-lsp && \
+    rokit trust horsenuggets/luau-lsp && \
     rokit trust johnnymorganz/stylua && \
-    rokit trust rojo-rbx/rojo && \
-    rokit add horsenuggets/lune@0.10.4-horse.3.0 --global && \
-    rokit add horsenuggets/wally@0.3.2-horse.1.0 --global
+    rokit trust horsenuggets/rojo && \
+    rokit add horsenuggets/lune@0.10.4-horse.14.2 --global && \
+    rokit add horsenuggets/wally@0.3.2-horse.5.1 --global
 
 # Create mock gh CLI script
-COPY Tests/mock-gh.sh /usr/local/bin/gh
+COPY Tests/MockGH.sh /usr/local/bin/gh
 RUN chmod +x /usr/local/bin/gh
 
 # Copy CLI source code for running via lune
@@ -55,7 +55,7 @@ RUN cd /opt/luauproject-cli && \
 # Note: Don't use -- after the script name as lune passes it as the first argument
 RUN echo '#!/bin/bash' > /usr/local/bin/luauproject && \
     echo 'ORIG_CWD="$(pwd)"' >> /usr/local/bin/luauproject && \
-    echo 'cd /opt/luauproject-cli && LUAUPROJECT_CWD="$ORIG_CWD" LUAUPROJECT_SKIP_INSTALL=1 lune run Source/LuauprojectCli/luauproject-cli.luau "$@"' >> /usr/local/bin/luauproject && \
+    echo 'cd /opt/luauproject-cli && LUAUPROJECT_CWD="$ORIG_CWD" LUAUPROJECT_SKIP_INSTALL=1 lune run Source/LuauprojectCli "$@"' >> /usr/local/bin/luauproject && \
     chmod +x /usr/local/bin/luauproject
 
 # Create workspace directory

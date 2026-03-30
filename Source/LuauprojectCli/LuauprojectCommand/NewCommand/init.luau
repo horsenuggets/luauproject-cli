@@ -1,6 +1,6 @@
 --[[
 
-new.cmd
+NewCommand
 
 Creates a new Luau project from the luau-package-template. Supports both interactive
 prompts and command-line flags.
@@ -943,7 +943,6 @@ local function logProjectCreation(config: ProjectConfig, results: SetupResults?)
                 isPrivate = config.IsPrivate,
                 isPrivatePackage = config.IsPrivatePackage,
             },
-            pid = process.id,
             cwd = process.cwd,
             setup = {
                 branchProtection = if results then results.BranchProtection else nil,

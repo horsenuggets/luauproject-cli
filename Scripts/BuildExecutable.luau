@@ -4,8 +4,8 @@
 
 BuildExecutable
 
-Compiles the luauproject CLI to a standalone executable. Generates the version
-module and patches requires for cross-platform compatibility.
+Compiles the luauproject CLI to a standalone executable. Generates the
+version module and patches requires for cross-platform compatibility.
 
 [Usage] ./Scripts/BuildExecutable.luau [target]
 
@@ -17,12 +17,12 @@ local process = require("@lune/process")
 local function buildExecutable()
     Toolkit.generateVersion({
         VersionFile = "VERSION",
-        OutputPath = "Source/LuauprojectCli/luauproject.cmd/__VERSION__.luau",
+        OutputPath = "Source/LuauprojectCli/LuauprojectCommand/__VERSION__.luau",
     })
 
     Toolkit.build({
         Name = "luauproject",
-        EntryPoint = "Source/LuauprojectCli/luauproject-cli.luau",
+        EntryPoint = "Source/LuauprojectCli",
         Target = process.args[1],
         AliasDirs = {
             { alias = "@packages", dir = "Packages" },

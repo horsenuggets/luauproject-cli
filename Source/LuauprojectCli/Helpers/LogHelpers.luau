@@ -2,8 +2,8 @@
 
 LogHelpers
 
-Helper functions for logging project creation events to a persistent JSONL file.
-Logs are stored in ~/.luauproject-cli/logs/project-creations.jsonl.
+Helper functions for logging project creation events to a persistent JSONL
+file. Logs are stored in ~/.luauproject-cli/logs/project-creations.jsonl.
 
 --]]
 
@@ -30,7 +30,6 @@ export type ProjectCreationEntry = {
         isPrivate: boolean,
         isPrivatePackage: boolean,
     },
-    pid: number,
     cwd: string,
     setup: {
         branchProtection: boolean?,
@@ -61,7 +60,6 @@ function LogHelpers.buildEntry(entry: ProjectCreationEntry): string
         args = entry.args,
         config = entry.config,
         cwd = entry.cwd,
-        pid = entry.pid,
         setup = entry.setup,
         timestamp = entry.timestamp,
         warnings = entry.warnings,
