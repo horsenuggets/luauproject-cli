@@ -34,7 +34,7 @@ RUN rokit trust horsenuggets/lune && \
     rokit trust horsenuggets/luau-lsp && \
     rokit trust johnnymorganz/stylua && \
     rokit trust horsenuggets/rojo && \
-    rokit add horsenuggets/lune@0.10.4-horse.13.0 --global && \
+    rokit add horsenuggets/lune@0.10.4-horse.14.2 --global && \
     rokit add horsenuggets/wally@0.3.2-horse.5.1 --global
 
 # Create mock gh CLI script
