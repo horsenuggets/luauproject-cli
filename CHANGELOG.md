@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0
+- Revamp CLI architecture to match rbxstudio-cli pattern (PascalCase commands, no launcher)
+- Replace centralized Terraform with per-repo branch protection config
+- Standardize CI workflows with GenerateVersion, real static analysis, and version-match
+- Strip Wally publish from private package release workflow
+
 ## 0.1.13
 - Bump commandline-luau to 0.0.15 (adds PowerShell completions with context-aware filtering)
 
