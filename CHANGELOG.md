@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+- Replace custom install/update commands with shared Toolkit abstractions from commandline-luau 0.2.0
+- Use direct binary self-replacement instead of launcher pattern
+- Remove 571 lines of custom install/update code
+
 ## 1.0.0
 - Revamp CLI architecture to match rbxstudio-cli pattern (PascalCase commands, no launcher)
 - Replace centralized Terraform with per-repo branch protection config
