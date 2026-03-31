@@ -1,6 +1,6 @@
 --[[
 
-new.cmd
+NewCommand
 
 Creates a new Luau project from the luau-package-template. Supports both interactive
 prompts and command-line flags.
@@ -16,6 +16,7 @@ local PathHelpers = require("@luauprojectcli/Helpers/PathHelpers")
 local PromptHelpers = require("@luauprojectcli/Helpers/PromptHelpers")
 local ShellHelpers = require("@luauprojectcli/Helpers/ShellHelpers")
 local StringHelpers = require("@luauprojectcli/Helpers/StringHelpers")
+local TerraformHelpers = require("@luauprojectcli/Helpers/TerraformHelpers")
 local WallyHelpers = require("@luauprojectcli/Helpers/WallyHelpers")
 local fs = require("@lune/fs")
 local process = require("@lune/process")
@@ -53,6 +54,7 @@ type ProjectConfig = {
 
 type SetupResults = {
     BranchProtection: boolean?,
+    Terraform: boolean?,
     WallyAuth: boolean?,
     CopilotReview: boolean?,
     Warnings: { string },
@@ -540,6 +542,102 @@ local function setupSubmodules(config: ProjectConfig)
     end
 end
 
+-- Removes a YAML job block from workflow content. Finds the
+-- job key matching the pattern at the given indent level and
+-- removes everything until the next job key at the same level.
+local function removeYamlJobBlock(content: string, jobKeyPattern: string): string
+    local lines = {}
+    local removing = false
+    local jobIndent = 0
+
+    for line in (content .. "\n"):gmatch("(.-)\n") do
+        if not removing then
+            -- Check if this line starts the job block to remove
+            local indent = #(line:match("^( *)") or "")
+            if line:match(jobKeyPattern) then
+                removing = true
+                jobIndent = indent
+                continue
+            end
+            table.insert(lines, line)
+        else
+            -- Check if we've reached the next job at the same
+            -- indent level (or a non-indented line)
+            local indent = #(line:match("^( *)") or "")
+            local isBlank = line:match("^%s*$")
+            if not isBlank and indent <= jobIndent and line:match("^%s+%S") then
+                removing = false
+                table.insert(lines, line)
+            end
+            -- Skip blank lines and indented content while
+            -- removing
+        end
+    end
+
+    return table.concat(lines, "\n") .. "\n"
+end
+
+-- Removes a YAML step block from workflow content. Finds the
+-- step with the matching name and removes it through to the
+-- next step or end of steps.
+local function removeYamlStepBlock(content: string, stepNamePattern: string): string
+    local lines = {}
+    local removing = false
+    local stepIndent = 0
+
+    for line in (content .. "\n"):gmatch("(.-)\n") do
+        if not removing then
+            if line:match(stepNamePattern) then
+                -- Also remove the preceding "- name:" line if
+                -- this is the name line itself, or find the
+                -- step start
+                removing = true
+                -- Find the indent of "- name:"
+                stepIndent = #(line:match("^( *)") or "")
+                -- Remove the previous "- name:" line if it was
+                -- already added
+                if #lines > 0 and lines[#lines]:match("^%s+%- name:") then
+                    table.remove(lines)
+                end
+                continue
+            end
+            table.insert(lines, line)
+        else
+            local indent = #(line:match("^( *)") or "")
+            local isBlank = line:match("^%s*$")
+            -- A new step starts with "- name:" at the same or
+            -- lesser indent
+            if not isBlank and indent <= stepIndent and line:match("^%s+%- name:") then
+                removing = false
+                table.insert(lines, line)
+            elseif not isBlank and indent < stepIndent then
+                removing = false
+                table.insert(lines, line)
+            end
+        end
+    end
+
+    return table.concat(lines, "\n") .. "\n"
+end
+
+local function stripWallyFromReleaseChecks(workflowPath: string)
+    if not fs.isFile(workflowPath) then
+        return
+    end
+    local content = fs.readFile(workflowPath)
+    content = removeYamlJobBlock(content, "^%s+wally%-auth:%s*$")
+    fs.writeFile(workflowPath, content)
+end
+
+local function stripWallyFromPublish(workflowPath: string)
+    if not fs.isFile(workflowPath) then
+        return
+    end
+    local content = fs.readFile(workflowPath)
+    content = removeYamlStepBlock(content, "name: Publish to Wally")
+    fs.writeFile(workflowPath, content)
+end
+
 local function copyWorkflows(config: ProjectConfig)
     printStep("Setting up CI workflows...")
 
@@ -560,6 +658,12 @@ local function copyWorkflows(config: ProjectConfig)
                 fs.copy(sourcePath, targetPath)
             end
         end
+    end
+
+    -- Strip Wally-related configuration for private packages
+    if config.IsPrivatePackage then
+        stripWallyFromReleaseChecks(`{workflowsTargetDir}/release-checks.yml`)
+        stripWallyFromPublish(`{workflowsTargetDir}/publish.yml`)
     end
 end
 
@@ -647,123 +751,6 @@ local function createReleaseBranch(config: ProjectConfig)
     ShellHelpers.runOrFail("git", { "checkout", "main" }, config.ProjectPath)
 end
 
--- Parse job names from a GitHub Actions workflow YAML file.
--- Scans each job block under "jobs:" for a "name:" field.
--- Works with any consistent indent size by detecting the
--- indent unit from the first job key.
-local function parseJobNames(workflowPath: string): { string }
-    local names: { string } = {}
-    if not fs.isFile(workflowPath) then
-        return names
-    end
-
-    local content = fs.readFile(workflowPath)
-    local inJobs = false
-    local indentUnit = 0
-    local inJob = false
-
-    for line in content:gmatch("[^\n]+") do
-        if line:match("^jobs:%s*$") then
-            inJobs = true
-            continue
-        end
-
-        if not inJobs then
-            continue
-        end
-
-        -- A non-indented line after "jobs:" means we left the
-        -- jobs section
-        if line:match("^%S") then
-            break
-        end
-
-        -- Skip blank lines
-        if line:match("^%s*$") then
-            continue
-        end
-
-        -- Count leading spaces
-        local spaces = #(line:match("^( *)") or "")
-
-        -- Detect indent unit from the first indented line under
-        -- "jobs:" (this is a job key like "  format:" or
-        -- "    format:")
-        if indentUnit == 0 and spaces > 0 then
-            indentUnit = spaces
-        end
-
-        if indentUnit == 0 then
-            continue
-        end
-
-        -- Job keys are at exactly 1x indent unit
-        if spaces == indentUnit and line:match("^%s+[%w_-]+:%s*$") then
-            inJob = true
-            continue
-        end
-
-        -- Look for "name:" at 2x indent unit within the current job
-        if inJob and spaces == indentUnit * 2 then
-            local jobName = line:match("^%s+name:%s*(.+)%s*$")
-            if jobName then
-                if not jobName:match("%${{") then
-                    table.insert(names, jobName)
-                end
-                inJob = false
-            end
-        end
-
-        -- A line at job-key level or above resets the job context
-        if spaces <= indentUnit then
-            inJob = false
-        end
-    end
-
-    return names
-end
-
-local function buildBranchProtectionJson(checks: { string }): string
-    local checksEntries = {}
-    for _, check in checks do
-        table.insert(checksEntries, '\t\t\t{ "context": "' .. check .. '" }')
-    end
-
-    local checksJson = table.concat(checksEntries, ",\n")
-
-    return "{\n"
-        .. '\t"required_status_checks": {\n'
-        .. '\t\t"strict": true,\n'
-        .. '\t\t"checks": [\n'
-        .. checksJson
-        .. "\n\t\t]\n"
-        .. "\t},\n"
-        .. '\t"enforce_admins": true,\n'
-        .. '\t"required_pull_request_reviews": null,\n'
-        .. '\t"restrictions": null,\n'
-        .. '\t"allow_force_pushes": false,\n'
-        .. '\t"allow_deletions": false\n'
-        .. "}"
-end
-
-local function getMainBranchProtectionJson(projectPath: string): string
-    local ciPath = `{projectPath}/.github/workflows/ci.yml`
-    local checks = parseJobNames(ciPath)
-
-    if #checks == 0 then
-        -- Fallback to known defaults
-        checks = {
-            "Validate branch name",
-            "Check formatting",
-            "Run tests",
-            "Static analysis",
-            "Check version match",
-        }
-    end
-
-    return buildBranchProtectionJson(checks)
-end
-
 local function getDevBranchProtectionJson(): string
     return [[{
         "required_status_checks": null,
@@ -773,25 +760,6 @@ local function getDevBranchProtectionJson(): string
         "allow_force_pushes": false,
         "allow_deletions": false
     }]]
-end
-
-local function getReleaseBranchProtectionJson(projectPath: string): string
-    local releasePath = `{projectPath}/.github/workflows/release-checks.yml`
-    local checks = parseJobNames(releasePath)
-
-    if #checks == 0 then
-        -- Fallback to known defaults
-        checks = {
-            "Validate PR title",
-            "Verify diff matches main",
-            "Check formatting",
-            "Run tests",
-            "Static analysis",
-            "Validate version",
-        }
-    end
-
-    return buildBranchProtectionJson(checks)
 end
 
 local function getCopilotCodeReviewRulesetJson(): string
@@ -817,13 +785,13 @@ local function getCopilotCodeReviewRulesetJson(): string
     }]]
 end
 
-local function applyBranchProtection(owner: string, name: string, branch: string, protectionJson: string): boolean
-    local tempFile = `/tmp/{branch}-protection.json`
-    fs.writeFile(tempFile, protectionJson)
+local function applyDevBranchProtection(owner: string, name: string): boolean
+    local tempFile = "/tmp/dev-protection.json"
+    fs.writeFile(tempFile, getDevBranchProtectionJson())
 
     local ok, _ = ShellHelpers.run("gh", {
         "api",
-        `repos/{owner}/{name}/branches/{branch}/protection`,
+        `repos/{owner}/{name}/branches/dev/protection`,
         "-X",
         "PUT",
         "-H",
@@ -835,21 +803,23 @@ local function applyBranchProtection(owner: string, name: string, branch: string
     return ok
 end
 
-local function setupBranchProtection(config: ProjectConfig): boolean
+local function setupBranchProtection(config: ProjectConfig): (boolean, boolean)
     printStep("Setting up branch protection rules...")
 
-    local mainOk =
-        applyBranchProtection(config.Owner, config.Name, "main", getMainBranchProtectionJson(config.ProjectPath))
-    local releaseOk =
-        applyBranchProtection(config.Owner, config.Name, "release", getReleaseBranchProtectionJson(config.ProjectPath))
-    local devOk = applyBranchProtection(config.Owner, config.Name, "dev", getDevBranchProtectionJson())
+    -- Main and release branches are managed via Terraform
+    local terraformOk = TerraformHelpers.applyBranchProtection(config.Name, config.Owner, config.IsPrivatePackage)
 
-    local allOk = mainOk and releaseOk and devOk
-    if not allOk then
-        print(Chalk.yellow("Failed to set branch protection (requires GitHub Pro for private repos)."))
+    if not terraformOk then
+        print(Chalk.yellow("Terraform branch protection failed. Set up manually."))
     end
 
-    return allOk
+    -- Dev branch is managed via gh API (not in Terraform module)
+    local devOk = applyDevBranchProtection(config.Owner, config.Name)
+    if not devOk then
+        print(Chalk.yellow("Failed to set dev branch protection (requires GitHub Pro for private repos)."))
+    end
+
+    return terraformOk, devOk
 end
 
 local function setupCopilotCodeReview(config: ProjectConfig): boolean
@@ -915,7 +885,8 @@ local function setupGithubRepository(config: ProjectConfig): SetupResults
     createDevBranch(config)
     createReleaseBranch(config)
 
-    local branchProtectionOk = setupBranchProtection(config)
+    local terraformOk, devProtectionOk = setupBranchProtection(config)
+    local branchProtectionOk = terraformOk and devProtectionOk
     if not branchProtectionOk then
         table.insert(warnings, "Failed to set branch protection (requires GitHub Pro for private repos)")
     end
@@ -936,6 +907,7 @@ local function setupGithubRepository(config: ProjectConfig): SetupResults
 
     return {
         BranchProtection = branchProtectionOk,
+        Terraform = terraformOk,
         WallyAuth = wallyAuthOk,
         CopilotReview = copilotReviewOk,
         Warnings = warnings,
@@ -971,12 +943,12 @@ local function logProjectCreation(config: ProjectConfig, results: SetupResults?)
                 isPrivate = config.IsPrivate,
                 isPrivatePackage = config.IsPrivatePackage,
             },
-            pid = process.id,
             cwd = process.cwd,
             setup = {
                 branchProtection = if results then results.BranchProtection else nil,
-                wallyAuth = if results then results.WallyAuth else nil,
                 copilotReview = if results then results.CopilotReview else nil,
+                terraform = if results then results.Terraform else nil,
+                wallyAuth = if results then results.WallyAuth else nil,
             },
             warnings = if results then results.Warnings else {},
         })
@@ -1049,6 +1021,9 @@ return Command.new({
         GitHubHelpers.ensureInstalled()
         printHeader()
         local config = gatherProjectConfig(flags)
+        if config.CreateGithubRepo then
+            TerraformHelpers.ensureInstalled()
+        end
         createProject(config)
     end,
 })

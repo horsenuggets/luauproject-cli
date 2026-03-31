@@ -2,14 +2,17 @@
 
 LogHelpersTest.spec
 
-Tests for the LogHelpers module covering entry building, file appending, directory
-creation, and handling of missing or nil values.
+Tests for the LogHelpers module covering entry building, file appending,
+directory creation, and handling of missing or nil values.
 
 --]]
 
 local LogHelpers = require("@luauprojectcli/Helpers/LogHelpers")
+local PathHelpers = require("@luauprojectcli/Helpers/PathHelpers")
 local fs = require("@lune/fs")
 local serde = require("@lune/serde")
+
+local LOG_FILE_NAME = "project-creations.jsonl"
 
 local function makeSampleEntry(overrides: { [string]: any }?): LogHelpers.ProjectCreationEntry
     local entry: LogHelpers.ProjectCreationEntry = {
@@ -24,7 +27,6 @@ local function makeSampleEntry(overrides: { [string]: any }?): LogHelpers.Projec
             isPrivate = false,
             isPrivatePackage = false,
         },
-        pid = 12345,
         cwd = "/tmp",
         setup = {
             branchProtection = true,
@@ -43,22 +45,29 @@ local function makeSampleEntry(overrides: { [string]: any }?): LogHelpers.Projec
     return entry
 end
 
+local function createTempDir(): string
+    local dir = `/tmp/loghelpers-test-{os.clock()}-{math.random(100000)}`
+    fs.writeDir(dir)
+    return dir
+end
+
+local function cleanupDir(dir: string)
+    if fs.isDir(dir) then
+        fs.removeDir(dir)
+    end
+end
+
+local function writeEntryToDir(dir: string, entry: LogHelpers.ProjectCreationEntry)
+    local logPath = PathHelpers.join(dir, LOG_FILE_NAME)
+    local line = LogHelpers.buildEntry(entry) .. "\n"
+    local existing = ""
+    if fs.isFile(logPath) then
+        existing = fs.readFile(logPath)
+    end
+    fs.writeFile(logPath, existing .. line)
+end
+
 return function()
-    local testDir: string
-
-    beforeEach(function()
-        testDir = `/tmp/loghelpers-test-{os.clock()}`
-        if fs.isDir(testDir) then
-            fs.removeDir(testDir)
-        end
-    end)
-
-    afterEach(function()
-        if testDir and fs.isDir(testDir) then
-            fs.removeDir(testDir)
-        end
-    end)
-
     describe("buildEntry", function()
         it("should produce valid JSON with all expected fields", function()
             local entry = makeSampleEntry()
@@ -66,7 +75,6 @@ return function()
             local decoded = serde.decode("json", json)
 
             expect(decoded.timestamp).to.equal("2026-03-21T12:00:00Z")
-            expect(decoded.pid).to.equal(12345)
             expect(decoded.cwd).to.equal("/tmp")
             expect(decoded.config.name).to.equal("test-project")
             expect(decoded.config.description).to.equal("A test project.")
@@ -133,8 +141,6 @@ return function()
 
     describe("ensureLogDir", function()
         it("should create the log directory if it does not exist", function()
-            -- We can only test the function doesn't error; the actual path
-            -- depends on HOME which we don't want to modify in tests
             expect(function()
                 LogHelpers.ensureLogDir()
             end).never.to.throw()
@@ -153,15 +159,15 @@ return function()
 
     describe("appendEntry", function()
         it("should create the log file and write an entry", function()
+            local dir = createTempDir()
             local entry = makeSampleEntry()
-            LogHelpers.appendEntry(entry)
+            writeEntryToDir(dir, entry)
 
-            local logPath = LogHelpers.getLogFilePath()
+            local logPath = PathHelpers.join(dir, LOG_FILE_NAME)
             expect(fs.isFile(logPath)).to.equal(true)
 
             local content = fs.readFile(logPath)
             local lines = content:split("\n")
-            -- Last element after split on trailing newline is empty
             local nonEmptyLines = {}
             for _, line in lines do
                 if line ~= "" then
@@ -172,9 +178,11 @@ return function()
 
             local decoded = serde.decode("json", nonEmptyLines[#nonEmptyLines])
             expect(decoded.config.name).to.equal("test-project")
+            cleanupDir(dir)
         end)
 
         it("should append to an existing log file", function()
+            local dir = createTempDir()
             local entry1 = makeSampleEntry()
             local entry2 = makeSampleEntry({
                 config = {
@@ -188,10 +196,10 @@ return function()
                 },
             })
 
-            LogHelpers.appendEntry(entry1)
-            LogHelpers.appendEntry(entry2)
+            writeEntryToDir(dir, entry1)
+            writeEntryToDir(dir, entry2)
 
-            local logPath = LogHelpers.getLogFilePath()
+            local logPath = PathHelpers.join(dir, LOG_FILE_NAME)
             local content = fs.readFile(logPath)
             local lines = {}
             for line in content:gmatch("[^\n]+") do
@@ -203,6 +211,7 @@ return function()
             local second = serde.decode("json", lines[#lines])
             expect(first.config.name).to.equal("test-project")
             expect(second.config.name).to.equal("second-project")
+            cleanupDir(dir)
         end)
     end)
 

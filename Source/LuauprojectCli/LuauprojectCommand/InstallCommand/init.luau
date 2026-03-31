@@ -1,6 +1,6 @@
 --[[
 
-install.cmd
+InstallCommand
 
 Installs the luauproject CLI by setting up the versioned directory
 structure. Copies the executable to ~/.luauproject-cli/versions,
@@ -13,11 +13,9 @@ local Chalk = require("@packages/Chalk")
 local Command = require("@packages/Commandline").Command
 local PathHelpers = require("@luauprojectcli/Helpers/PathHelpers")
 local UpdateHelpers = require("@luauprojectcli/Helpers/UpdateHelpers")
-local __VERSION__ = require("@luauprojectcli/luauproject.cmd/__VERSION__")
+local __VERSION__ = require("@luauprojectcli/LuauprojectCommand/__VERSION__")
 local fs = require("@lune/fs")
-local net = require("@lune/net")
 local process = require("@lune/process")
-local serde = require("@lune/serde")
 local stdio = require("@lune/stdio")
 
 ------------------------------------------------------------------------------------------
@@ -34,7 +32,6 @@ local EXECUTABLE_NAME = if IS_WINDOWS then "luauproject.exe" else "luauproject"
 local EXECUTABLE_SUFFIX = if IS_WINDOWS then ".exe" else ""
 local PATH_EXPORT_COMMENT = "# Added by luauproject-cli"
 local PATH_EXPORT_LINE = `export PATH="{BIN_DIR}:$PATH"`
-local REPOSITORY = "horsenuggets/luauproject-cli"
 local SHELL_CONFIGS = {
     { file = ".bash_profile", shell = "bash" },
     { file = ".bashrc", shell = "bash" },

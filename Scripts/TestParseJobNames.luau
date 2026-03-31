@@ -13,7 +13,7 @@ local fs = require("@lune/fs")
 local process = require("@lune/process")
 local stdio = require("@lune/stdio")
 
--- Copy of parseJobNames from new.cmd/init.luau for isolated testing
+-- Copy of parseJobNames from NewCommand/init.luau for isolated testing
 local function parseJobNames(workflowPath: string): { string }
     local names: { string } = {}
     if not fs.isFile(workflowPath) then

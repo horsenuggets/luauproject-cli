@@ -63,5 +63,21 @@ return function()
         it("should handle already PascalCase input", function()
             expect(StringHelpers.toPascalCase("Project")).to.equal("Project")
         end)
+
+        it("should uppercase 2-letter segments", function()
+            expect(StringHelpers.toPascalCase("luau-ui")).to.equal("LuauUI")
+        end)
+
+        it("should uppercase 2-letter segments like gl", function()
+            expect(StringHelpers.toPascalCase("luau-gl")).to.equal("LuauGL")
+        end)
+
+        it("should uppercase multiple 2-letter segments", function()
+            expect(StringHelpers.toPascalCase("my-ci-cd")).to.equal("MyCICD")
+        end)
+
+        it("should not uppercase 'id' (exception)", function()
+            expect(StringHelpers.toPascalCase("place-id")).to.equal("PlaceId")
+        end)
     end)
 end
