@@ -44,7 +44,8 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           chmod +x Build/luauproject
-          Build/luauproject install
+          export PATH="$PWD/Build:$PATH"
+          luauproject install
 
           # Verify installation
           if [ ! -f "$HOME/.luauproject-cli/bin/luauproject" ]; then
@@ -59,7 +60,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          .\Build\luauproject.exe install
+          $env:PATH = "$PWD\Build;$env:PATH"
+          luauproject install
 
           # Verify installation
           $installPath = "$env:USERPROFILE\.luauproject-cli\bin\luauproject.exe"
