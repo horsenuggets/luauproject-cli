@@ -33,7 +33,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          iwr "https://raw.githubusercontent.com/horsenuggets/luauproject-cli/main/Scripts/install-win.ps1" -useb | iex
+          iwr "https://raw.githubusercontent.com/horsenuggets/luauproject-cli/main/Scripts/Install.Win.ps1" -useb | iex
 
       - name: Verify installation (Unix)
         if: runner.os != 'Windows'

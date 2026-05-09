@@ -38,4 +38,3 @@ _build_entry.luau
 .terraform/
 *.tfstate
 *.tfstate.backup
-.worktrees/
