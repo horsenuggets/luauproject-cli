@@ -247,15 +247,15 @@ local function validateProjectPath(projectPath: string)
     if fs.isDir(projectPath) then
         local entries = fs.readDir(projectPath)
         if #entries > 0 then
-            stdio.ewrite(
-                Chalk.red(`Directory "{PathHelpers.formatDirectory(projectPath)}" already exists and is not empty.\n`)
-            )
+            local displayPath = Chalk.dim(PathHelpers.formatDirectory(projectPath))
+            stdio.ewrite(`{Chalk.red("Directory")} {displayPath} {Chalk.red("already exists and is not empty.")}\n`)
             process.exit(1)
         end
     end
 
     if fs.isFile(projectPath) then
-        stdio.ewrite(Chalk.red(`A file already exists at "{PathHelpers.formatFile(projectPath)}".\n`))
+        local displayPath = Chalk.dim(PathHelpers.formatFile(projectPath))
+        stdio.ewrite(`{Chalk.red("A file already exists at")} {displayPath}{Chalk.red(".")}\n`)
         process.exit(1)
     end
 end

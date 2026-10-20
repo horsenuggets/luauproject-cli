@@ -307,10 +307,11 @@ function TerraformHelpers.getLuauCicdTerraformPath(): string
         if fs.isFile(PathHelpers.join(normalized, "Main.tf")) then
             return normalized
         end
+        local displayPath = Chalk.dim(PathHelpers.formatDirectory(envPath))
         print(
-            Chalk.yellow(
-                `LUAU_CICD_TERRAFORM_PATH is set to "{PathHelpers.formatDirectory(envPath)}" but does not contain Main.tf.`
-            )
+            `{Chalk.yellow("LUAU_CICD_TERRAFORM_PATH is set to")} {displayPath} {Chalk.yellow(
+                "but does not contain Main.tf."
+            )}`
         )
     end
 
@@ -322,7 +323,8 @@ function TerraformHelpers.getLuauCicdTerraformPath(): string
         if fs.isFile(PathHelpers.join(normalized, "Main.tf")) then
             return normalized
         end
-        print(Chalk.yellow(`Saved Terraform path "{PathHelpers.formatDirectory(configPath)}" no longer valid.`))
+        local displayPath = Chalk.dim(PathHelpers.formatDirectory(configPath))
+        print(`{Chalk.yellow("Saved Terraform path")} {displayPath} {Chalk.yellow("is no longer valid.")}`)
     end
 
     -- Prompt the user
