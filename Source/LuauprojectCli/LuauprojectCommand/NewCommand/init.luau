@@ -98,7 +98,9 @@ end
 
 local function printCreatingProject(name: string, projectPath: string)
     print()
-    print(`Creating project {Chalk.bold(Chalk.blueBright(name))} at {Chalk.dim(PathHelpers.tildify(projectPath))}...`)
+    print(
+        `Creating project {Chalk.bold(Chalk.blueBright(name))} at {Chalk.dim(PathHelpers.formatDirectory(projectPath))}...`
+    )
 end
 
 local function printStep(message: string)
@@ -109,7 +111,7 @@ local function printSuccess(config: ProjectConfig)
     print()
     print(Chalk.bold(Chalk.greenBright("Project created successfully!")))
     print()
-    print(`Location is {Chalk.dim(PathHelpers.tildify(config.ProjectPath))}.`)
+    print(`Location is {Chalk.dim(PathHelpers.formatDirectory(config.ProjectPath))}.`)
 
     if config.CreateGithubRepo then
         print(`Repository is at {Chalk.bold(Chalk.blueBright(`https://github.com/{config.Owner}/{config.Name}`))}.`)
@@ -245,13 +247,15 @@ local function validateProjectPath(projectPath: string)
     if fs.isDir(projectPath) then
         local entries = fs.readDir(projectPath)
         if #entries > 0 then
-            stdio.ewrite(Chalk.red(`Directory "{projectPath}" already exists and is not empty.\n`))
+            local displayPath = Chalk.dim(PathHelpers.formatDirectory(projectPath))
+            stdio.ewrite(`{Chalk.red("Directory")} {displayPath} {Chalk.red("already exists and is not empty.")}\n`)
             process.exit(1)
         end
     end
 
     if fs.isFile(projectPath) then
-        stdio.ewrite(Chalk.red(`A file already exists at "{projectPath}".\n`))
+        local displayPath = Chalk.dim(PathHelpers.formatFile(projectPath))
+        stdio.ewrite(`{Chalk.red("A file already exists at")} {displayPath}{Chalk.red(".")}\n`)
         process.exit(1)
     end
 end
@@ -260,15 +264,15 @@ local function getProjectPath(flags: any, name: string): string
     -- LUAUPROJECT_CWD is set by the wrapper script when running from a different
     -- directory
     local basePath = process.env.LUAUPROJECT_CWD or process.cwd
-    local defaultPath = string.gsub(`{basePath}/{name}`, "/$", "")
+    local defaultPath = PathHelpers.trimTrailingSeparators(PathHelpers.join(basePath, name))
 
     if flags.path.Value and flags.path.Value ~= "" then
-        local projectPath = string.gsub(flags.path.Value, "/$", "")
+        local projectPath = PathHelpers.trimTrailingSeparators(PathHelpers.normalize(flags.path.Value))
         validateProjectPath(projectPath)
         return projectPath
     end
 
-    local projectPath = PromptHelpers.prompt("Project location", PathHelpers.tildify(defaultPath))
+    local projectPath = PromptHelpers.prompt("Project location", PathHelpers.formatDirectory(defaultPath))
     if projectPath == "" then
         projectPath = defaultPath
     end
@@ -279,7 +283,7 @@ local function getProjectPath(flags: any, name: string): string
         projectPath = home .. string.sub(projectPath, 2)
     end
 
-    projectPath = string.gsub(projectPath, "/$", "")
+    projectPath = PathHelpers.trimTrailingSeparators(PathHelpers.normalize(projectPath))
     validateProjectPath(projectPath)
     return projectPath
 end
@@ -823,7 +827,7 @@ local function setupBranchProtection(config: ProjectConfig): (boolean, boolean)
 end
 
 local function setupCopilotCodeReview(config: ProjectConfig): boolean
-    printStep("Setting up Copilot code review...")
+    printStep("Enabling Copilot code review for all PRs...")
 
     local tempFile = "/tmp/copilot-ruleset.json"
     fs.writeFile(tempFile, getCopilotCodeReviewRulesetJson())
@@ -839,9 +843,7 @@ local function setupCopilotCodeReview(config: ProjectConfig): boolean
         tempFile,
     })
 
-    if ok then
-        print(Chalk.dim("Copilot code review enabled for all PRs..."))
-    else
+    if not ok then
         print(Chalk.yellow("Failed to set up Copilot code review (requires Copilot subscription)."))
     end
 
