@@ -827,7 +827,7 @@ local function setupBranchProtection(config: ProjectConfig): (boolean, boolean)
 end
 
 local function setupCopilotCodeReview(config: ProjectConfig): boolean
-    printStep("Setting up Copilot code review...")
+    printStep("Enabling Copilot code review for all PRs...")
 
     local tempFile = "/tmp/copilot-ruleset.json"
     fs.writeFile(tempFile, getCopilotCodeReviewRulesetJson())
@@ -843,9 +843,7 @@ local function setupCopilotCodeReview(config: ProjectConfig): boolean
         tempFile,
     })
 
-    if ok then
-        print(Chalk.dim("Copilot code review enabled for all PRs..."))
-    else
+    if not ok then
         print(Chalk.yellow("Failed to set up Copilot code review (requires Copilot subscription)."))
     end
 
