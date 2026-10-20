@@ -95,6 +95,17 @@ return function()
             env.cleanup()
         end)
 
+        it("should exit with code 1 instead of re-prompting for an invalid --path", function()
+            local env = TestEnvironmentHelpers.create()
+            local projectPath = `{env.path}/flag-path`
+            env.writeDir("flag-path")
+            env.writeFile("flag-path/file.txt", "content")
+            local result = env.runCli(buildArgs("flag-project", projectPath))
+            expect(result.code).to.equal(1)
+            expect(string.find(result.stdout, "Project location")).to.equal(nil)
+            env.cleanup()
+        end)
+
         it("should not fail when directory exists but is empty", function()
             local env = TestEnvironmentHelpers.create()
             local projectPath = `{env.path}/empty-dir`
