@@ -151,7 +151,7 @@ local function getProjectName(flags: any): string
         local input = PromptHelpers.prompt("Project name (kebab-case)")
         if input == "" then
             stdio.ewrite(Chalk.red("Project name is required.\n"))
-            process.exit(1)
+            continue
         end
 
         local corrected = StringHelpers.toKebabCase(input)
@@ -192,25 +192,25 @@ local function getOwner(flags: any): string
 
     local owners = GitHubHelpers.getAvailableOwners()
 
-    if #owners == 0 then
-        local result = PromptHelpers.prompt("GitHub owner or organization")
-        if result == "" then
-            stdio.ewrite(Chalk.red("GitHub owner is required.\n"))
-            process.exit(1)
-        end
-        return result
-    elseif #owners == 1 then
+    if #owners == 1 then
         return PromptHelpers.prompt("GitHub owner or organization", owners[1])
     end
 
-    local index = stdio.prompt("select", "GitHub owner or organization", owners)
-    if index then
-        return owners[index]
-    end
+    while true do
+        if #owners == 0 then
+            local result = PromptHelpers.prompt("GitHub owner or organization")
+            if result ~= "" then
+                return result
+            end
+        else
+            local index = stdio.prompt("select", "GitHub owner or organization", owners)
+            if index then
+                return owners[index]
+            end
+        end
 
-    stdio.ewrite(Chalk.red("GitHub owner is required.\n"))
-    process.exit(1)
-    return "" -- Unreachable, but satisfies type checker
+        stdio.ewrite(Chalk.red("GitHub owner is required.\n"))
+    end
 end
 
 local function shouldCreateGithubRepo(flags: any): boolean
@@ -243,21 +243,24 @@ local function shouldBePrivatePackage(flags: any): boolean
     return PromptHelpers.promptConfirm("Private package? (will not publish to Wally)", false)
 end
 
-local function validateProjectPath(projectPath: string)
+-- Prints an error and returns false if the project path cannot be used
+local function validateProjectPath(projectPath: string): boolean
     if fs.isDir(projectPath) then
         local entries = fs.readDir(projectPath)
         if #entries > 0 then
             local displayPath = Chalk.dim(PathHelpers.formatDirectory(projectPath))
             stdio.ewrite(`{Chalk.red("Directory")} {displayPath} {Chalk.red("already exists and is not empty.")}\n`)
-            process.exit(1)
+            return false
         end
     end
 
     if fs.isFile(projectPath) then
         local displayPath = Chalk.dim(PathHelpers.formatFile(projectPath))
         stdio.ewrite(`{Chalk.red("A file already exists at")} {displayPath}{Chalk.red(".")}\n`)
-        process.exit(1)
+        return false
     end
+
+    return true
 end
 
 local function getProjectPath(flags: any, name: string): string
@@ -268,7 +271,9 @@ local function getProjectPath(flags: any, name: string): string
 
     if flags.path.Value and flags.path.Value ~= "" then
         local projectPath = PathHelpers.trimTrailingSeparators(PathHelpers.normalize(flags.path.Value))
-        validateProjectPath(projectPath)
+        if not validateProjectPath(projectPath) then
+            process.exit(1)
+        end
         return projectPath
     end
 
@@ -284,7 +289,10 @@ local function getProjectPath(flags: any, name: string): string
     end
 
     projectPath = PathHelpers.trimTrailingSeparators(PathHelpers.normalize(projectPath))
-    validateProjectPath(projectPath)
+    if not validateProjectPath(projectPath) then
+        -- The path came from the interactive prompt, so ask again
+        return getProjectPath(flags, name)
+    end
     return projectPath
 end
 
