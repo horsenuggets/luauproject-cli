@@ -36,9 +36,10 @@ return function()
             expect(PathHelpers.trimTrailingSeparators("/")).to.equal(SEP)
         end)
 
-        it("should keep the separator on a drive root", function()
-            expect(PathHelpers.trimTrailingSeparators("C:\\")).to.equal(`C:{SEP}`)
-            expect(PathHelpers.trimTrailingSeparators("C:\\\\")).to.equal(`C:{SEP}`)
+        it("should keep the separator on a drive root only on Windows", function()
+            local expected = if IS_WINDOWS then `C:{SEP}` else "C:"
+            expect(PathHelpers.trimTrailingSeparators("C:\\")).to.equal(expected)
+            expect(PathHelpers.trimTrailingSeparators("C:\\\\")).to.equal(expected)
         end)
 
         it("should leave a drive-relative path unchanged", function()
@@ -69,8 +70,10 @@ return function()
             expect(PathHelpers.formatDirectory(sibling)).to.equal(sibling .. SEP)
         end)
 
-        it("should show a drive-relative path as the drive's current directory", function()
-            expect(PathHelpers.formatDirectory("C:")).to.equal(`C:.{SEP}`)
+        it("should show a drive-relative path as the drive's current directory on Windows", function()
+            -- On POSIX "C:" is an ordinary directory name
+            local expected = if IS_WINDOWS then `C:.{SEP}` else "C:/"
+            expect(PathHelpers.formatDirectory("C:")).to.equal(expected)
         end)
     end)
 

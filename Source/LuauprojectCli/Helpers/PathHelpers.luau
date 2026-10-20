@@ -87,8 +87,8 @@ function PathHelpers.tildify(path: string): string
 end
 
 --[[
-    Removes trailing separators from a path, preserving a bare root. Drive roots like "C:\"
-    keep their separator, since "C:" alone means the drive's current directory on Windows.
+    Removes trailing separators from a path, preserving a bare root. On Windows, drive roots like
+    "C:\" keep their separator, since "C:" alone means the drive's current directory on Windows.
 
     Example: "/home/user/project//" -> "/home/user/project"
 ]]
@@ -102,7 +102,7 @@ function PathHelpers.trimTrailingSeparators(path: string): string
     if trimmed == "" then
         return NATIVE_SEP
     end
-    if string.match(trimmed, "^%a:$") then
+    if IS_WINDOWS and string.match(trimmed, "^%a:$") then
         return trimmed .. NATIVE_SEP
     end
     return trimmed
@@ -119,14 +119,14 @@ end
 
 --[[
     Formats a directory path for display: normalized, with the home directory replaced by ~,
-    and ending in a separator to mark it as a directory. A drive-relative "C:" is shown as
-    "C:.\" so the trailing separator doesn't make it look like the drive root.
+    and ending in a separator to mark it as a directory. On Windows, a drive-relative "C:" is
+    shown as "C:.\" so the trailing separator doesn't make it look like the drive root.
 
     Example: "/home/user//git/project" -> "~/git/project/"
 ]]
 function PathHelpers.formatDirectory(path: string): string
     local formatted = PathHelpers.formatFile(path)
-    if string.match(formatted, "^%a:$") then
+    if IS_WINDOWS and string.match(formatted, "^%a:$") then
         return formatted .. "." .. NATIVE_SEP
     end
     if string.sub(formatted, -1) == NATIVE_SEP then
