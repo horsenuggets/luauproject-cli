@@ -35,6 +35,15 @@ return function()
         it("should preserve a bare root", function()
             expect(PathHelpers.trimTrailingSeparators("/")).to.equal(SEP)
         end)
+
+        it("should keep the separator on a drive root", function()
+            expect(PathHelpers.trimTrailingSeparators("C:\\")).to.equal(`C:{SEP}`)
+            expect(PathHelpers.trimTrailingSeparators("C:\\\\")).to.equal(`C:{SEP}`)
+        end)
+
+        it("should leave a drive-relative path unchanged", function()
+            expect(PathHelpers.trimTrailingSeparators("C:")).to.equal("C:")
+        end)
     end)
 
     describe("PathHelpers.formatDirectory", function()

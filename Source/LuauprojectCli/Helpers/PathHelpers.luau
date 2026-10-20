@@ -82,7 +82,8 @@ function PathHelpers.tildify(path: string): string
 end
 
 --[[
-    Removes trailing separators from a path, preserving a bare root.
+    Removes trailing separators from a path, preserving a bare root. Drive roots like "C:\"
+    keep their separator, since "C:" alone means the drive's current directory on Windows.
 
     Example: "/home/user/project//" -> "/home/user/project"
 ]]
@@ -90,8 +91,14 @@ function PathHelpers.trimTrailingSeparators(path: string): string
     assert(type(path) == "string", "path must be a string")
 
     local trimmed = string.gsub(path, "[/\\]+$", "")
-    if trimmed == "" and path ~= "" then
+    if trimmed == path then
+        return path
+    end
+    if trimmed == "" then
         return NATIVE_SEP
+    end
+    if string.match(trimmed, "^%a:$") then
+        return trimmed .. NATIVE_SEP
     end
     return trimmed
 end
