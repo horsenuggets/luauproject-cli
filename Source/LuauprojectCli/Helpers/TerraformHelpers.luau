@@ -304,10 +304,14 @@ function TerraformHelpers.getLuauCicdTerraformPath(): string
     local envPath = process.env.LUAU_CICD_TERRAFORM_PATH
     if envPath and envPath ~= "" then
         local normalized = PathHelpers.normalize(envPath)
-        if fs.isFile(`{normalized}/Main.tf`) then
+        if fs.isFile(PathHelpers.join(normalized, "Main.tf")) then
             return normalized
         end
-        print(Chalk.yellow(`LUAU_CICD_TERRAFORM_PATH is set to "{envPath}" but does not contain Main.tf.`))
+        print(
+            Chalk.yellow(
+                `LUAU_CICD_TERRAFORM_PATH is set to "{PathHelpers.formatDirectory(envPath)}" but does not contain Main.tf.`
+            )
+        )
     end
 
     -- Check config file
@@ -315,10 +319,10 @@ function TerraformHelpers.getLuauCicdTerraformPath(): string
     local configPath = config.luau_cicd_terraform_path
     if type(configPath) == "string" and configPath ~= "" then
         local normalized = PathHelpers.normalize(configPath)
-        if fs.isFile(`{normalized}/Main.tf`) then
+        if fs.isFile(PathHelpers.join(normalized, "Main.tf")) then
             return normalized
         end
-        print(Chalk.yellow(`Saved Terraform path "{configPath}" no longer valid.`))
+        print(Chalk.yellow(`Saved Terraform path "{PathHelpers.formatDirectory(configPath)}" no longer valid.`))
     end
 
     -- Prompt the user
@@ -341,12 +345,12 @@ function TerraformHelpers.getLuauCicdTerraformPath(): string
         end
 
         local normalized = PathHelpers.normalize(input)
-        if not fs.isFile(`{normalized}/Main.tf`) then
+        if not fs.isFile(PathHelpers.join(normalized, "Main.tf")) then
             stdio.ewrite(Chalk.red(`Directory does not contain Main.tf. Check the path.\n`))
             continue
         end
 
-        if not fs.isDir(`{normalized}/Modules/LuauRepo`) then
+        if not fs.isDir(PathHelpers.join(normalized, "Modules", "LuauRepo")) then
             stdio.ewrite(Chalk.red(`Directory does not contain Modules/LuauRepo/. Check the path.\n`))
             continue
         end
