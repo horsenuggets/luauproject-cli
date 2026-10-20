@@ -61,7 +61,7 @@ end
 --[[
     Replaces the home directory prefix with ~ for display purposes.
 
-    Example: "/Users/chris/git/my-project" -> "~/git/my-project"
+    Example: "/home/user/git/my-project" -> "~/git/my-project"
 ]]
 function PathHelpers.tildify(path: string): string
     assert(type(path) == "string", "path must be a string")
@@ -73,8 +73,13 @@ function PathHelpers.tildify(path: string): string
 
     -- Ensure home uses the same separators as the path and doesn't end with one
     home = string.gsub(PathHelpers.normalize(home), "[/\\]+$", "")
+    if home == "" then
+        return path
+    end
 
-    if string.sub(path, 1, #home) == home then
+    -- Only substitute a whole home directory, not a sibling like "/home/user-backup"
+    local nextChar = string.sub(path, #home + 1, #home + 1)
+    if string.sub(path, 1, #home) == home and (nextChar == "" or nextChar == "/" or nextChar == "\\") then
         return "~" .. string.sub(path, #home + 1)
     end
 
@@ -106,7 +111,7 @@ end
 --[[
     Formats a file path for display: normalized, with the home directory replaced by ~.
 
-    Example: "/Users/chris//git/file.txt" -> "~/git/file.txt"
+    Example: "/home/user//git/file.txt" -> "~/git/file.txt"
 ]]
 function PathHelpers.formatFile(path: string): string
     return PathHelpers.tildify(PathHelpers.trimTrailingSeparators(PathHelpers.normalize(path)))
@@ -114,12 +119,16 @@ end
 
 --[[
     Formats a directory path for display: normalized, with the home directory replaced by ~,
-    and ending in a separator to mark it as a directory.
+    and ending in a separator to mark it as a directory. A drive-relative "C:" is shown as
+    "C:.\" so the trailing separator doesn't make it look like the drive root.
 
-    Example: "/Users/chris//git/project" -> "~/git/project/"
+    Example: "/home/user//git/project" -> "~/git/project/"
 ]]
 function PathHelpers.formatDirectory(path: string): string
     local formatted = PathHelpers.formatFile(path)
+    if string.match(formatted, "^%a:$") then
+        return formatted .. "." .. NATIVE_SEP
+    end
     if string.sub(formatted, -1) == NATIVE_SEP then
         return formatted
     end

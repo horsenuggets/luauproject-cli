@@ -59,6 +59,19 @@ return function()
             end
             expect(PathHelpers.formatDirectory(`{home}//git/project`)).to.equal(native("~/git/project/"))
         end)
+
+        it("should not replace a sibling of the home directory with ~", function()
+            local home = process.env.HOME
+            if not home or home == "" then
+                return
+            end
+            local sibling = PathHelpers.normalize(`{home}-backup/project`)
+            expect(PathHelpers.formatDirectory(sibling)).to.equal(sibling .. SEP)
+        end)
+
+        it("should show a drive-relative path as the drive's current directory", function()
+            expect(PathHelpers.formatDirectory("C:")).to.equal(`C:.{SEP}`)
+        end)
     end)
 
     describe("PathHelpers.formatFile", function()
