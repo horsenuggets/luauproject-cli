@@ -335,10 +335,22 @@ return function()
         end)
 
         describe("with lune from source", function()
-            it("should work when running via lune", function()
+            it("should create a project when running via lune", function()
                 local env = DockerEnvironmentHelpers.create()
 
-                env.exec("mkdir", { "-p", "/workspace/cli-source" })
+                local result = env.runCliFromSource(buildArgs("source-proj", "A source project", "test-user"))
+
+                expectSuccess(result)
+                expect(result.stdout:match("Project created successfully")).to.be.ok()
+                expect(env.dirExists("/workspace/source-proj/.git")).to.equal(true)
+                expect(env.dirExists("/workspace/source-proj/Source/SourceProj")).to.equal(true)
+
+                local wallyContent = env.readFile("/workspace/source-proj/wally.toml")
+                expect(wallyContent:match("test%-user/source%-proj")).to.be.ok()
+                expect(wallyContent:match("A source project")).to.be.ok()
+
+                local readmeContent = env.readFile("/workspace/source-proj/README.md")
+                expect(readmeContent:match("# source%-proj")).to.be.ok()
 
                 env.cleanup()
             end)

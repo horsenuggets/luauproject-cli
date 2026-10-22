@@ -17,6 +17,7 @@ local process = require("@lune/process")
 
 local BUILD_OUTPUT_DIR = "Build/Docker"
 local BUILD_TARGET = "linux-x86_64"
+local CLI_SOURCE_DIR = "/opt/luauproject-cli"
 local CONTAINER_WORK_DIR = "/workspace"
 local DOCKER_IMAGE = "luauproject-cli-test"
 
@@ -36,6 +37,7 @@ export type DockerEnv = {
     copyToContainer: (hostPath: string, containerPath: string) -> (),
     copyFromContainer: (containerPath: string, hostPath: string) -> (),
     runCli: (args: { string }?) -> ExecResult,
+    runCliFromSource: (args: { string }?) -> ExecResult,
     initGit: () -> (),
     gitCommit: (message: string) -> (),
 }
@@ -251,6 +253,29 @@ function DockerEnvironmentHelpers.create(): DockerEnv
 
         runCli = function(args: { string }?): ExecResult
             local dockerArgs = { "exec", containerId, "luauproject" }
+            if args then
+                for _, arg in args do
+                    table.insert(dockerArgs, arg)
+                end
+            end
+            return process.exec("docker", dockerArgs)
+        end,
+
+        runCliFromSource = function(args: { string }?): ExecResult
+            -- Run from the source directory so the rokit shim resolves the lune version
+            -- pinned in its rokit.toml, and pass LUAUPROJECT_CWD so the CLI still treats
+            -- the workspace as the directory it was invoked from
+            local dockerArgs = {
+                "exec",
+                "-w",
+                CLI_SOURCE_DIR,
+                "-e",
+                `LUAUPROJECT_CWD={CONTAINER_WORK_DIR}`,
+                containerId,
+                "lune",
+                "run",
+                "Source/LuauprojectCli",
+            }
             if args then
                 for _, arg in args do
                     table.insert(dockerArgs, arg)
