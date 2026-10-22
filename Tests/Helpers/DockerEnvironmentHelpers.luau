@@ -6,6 +6,9 @@ Helper module for running tests inside an isolated Docker container. The contain
 git, gh (GitHub CLI), rokit, wally, and lune pre-installed for testing the full CLI
 workflow without affecting the host system.
 
+Call prepare() once in a beforeAll hook before creating any environments, and
+cleanupAll() in an afterAll hook to remove containers left behind by failed tests.
+
 --]]
 
 local fs = require("@lune/fs")
@@ -15,6 +18,9 @@ local CONTAINER_WORK_DIR = "/workspace"
 local DOCKER_IMAGE = "luauproject-cli-test"
 
 local DockerEnvironmentHelpers = {}
+
+local activeContainers: { [string]: boolean } = {}
+local isPrepared = false
 
 export type DockerEnv = {
     containerId: string,
@@ -69,24 +75,45 @@ function DockerEnvironmentHelpers.expectSuccess(result: ExecResult)
     end
 end
 
-local function ensureImageExists()
-    local result = process.exec("docker", { "image", "inspect", DOCKER_IMAGE })
-    if not result.ok then
-        local dockerfilePath = `{process.cwd}/Tests/Dockerfile`
-        assert(fs.isFile(dockerfilePath), `Dockerfile not found at {dockerfilePath}`)
+local function buildImage()
+    local dockerfilePath = `{process.cwd}/Tests/Dockerfile`
+    assert(fs.isFile(dockerfilePath), `Dockerfile not found at "{dockerfilePath}".`)
 
-        print("Building Docker test image...")
-        local buildResult = process.exec("docker", {
-            "build",
-            "-t",
-            DOCKER_IMAGE,
-            "-f",
-            dockerfilePath,
-            process.cwd,
-        })
+    -- Always build so the image never goes stale. Docker's layer cache makes this fast
+    -- when nothing has changed.
+    print(`Building "{DOCKER_IMAGE}" Docker image...`)
+    local result = process.exec("docker", {
+        "build",
+        "-t",
+        DOCKER_IMAGE,
+        "-f",
+        dockerfilePath,
+        process.cwd,
+    })
+    assert(result.ok, `Failed to build Docker image. {DockerEnvironmentHelpers.formatExecResult(result)}`)
+end
 
-        assert(buildResult.ok, `Failed to build Docker image: {buildResult.stderr}`)
+--[[
+    Builds the Docker test image from the current source. Only does work on the first
+    call, so it's safe to call from several beforeAll hooks.
+]]
+function DockerEnvironmentHelpers.prepare()
+    if isPrepared then
+        return
     end
+    buildImage()
+    isPrepared = true
+end
+
+--[[
+    Removes every container created by create() that hasn't been cleaned up yet, such as
+    those left behind by tests that failed before calling cleanup().
+]]
+function DockerEnvironmentHelpers.cleanupAll()
+    for containerId in activeContainers do
+        process.exec("docker", { "rm", "-f", containerId })
+    end
+    table.clear(activeContainers)
 end
 
 function DockerEnvironmentHelpers.isDockerAvailable(): boolean
@@ -95,7 +122,7 @@ function DockerEnvironmentHelpers.isDockerAvailable(): boolean
 end
 
 function DockerEnvironmentHelpers.create(): DockerEnv
-    ensureImageExists()
+    assert(isPrepared, "Call DockerEnvironmentHelpers.prepare() in a beforeAll hook before create().")
 
     local timestamp = tostring(os.time()) .. tostring(math.random(10000, 99999))
     local containerName = `luauproject-test-{timestamp}`
@@ -112,15 +139,17 @@ function DockerEnvironmentHelpers.create(): DockerEnv
         "3600",
     })
 
-    assert(startResult.ok, `Failed to start Docker container: {startResult.stderr}`)
+    assert(startResult.ok, `Failed to start Docker container. {DockerEnvironmentHelpers.formatExecResult(startResult)}`)
 
     local containerId = startResult.stdout:gsub("%s+", "")
+    activeContainers[containerId] = true
 
     local env: DockerEnv = {
         containerId = containerId,
 
         cleanup = function()
             process.exec("docker", { "rm", "-f", containerId })
+            activeContainers[containerId] = nil
         end,
 
         exec = function(command: string, args: { string }?): ExecResult

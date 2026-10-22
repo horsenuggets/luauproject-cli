@@ -61,6 +61,14 @@ return function()
             return
         end
 
+        beforeAll(function()
+            DockerEnvironmentHelpers.prepare()
+        end)
+
+        afterAll(function()
+            DockerEnvironmentHelpers.cleanupAll()
+        end)
+
         describe("with built executable", function()
             describe("basic project creation", function()
                 it("should create a project with all required flags", function()
