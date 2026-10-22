@@ -4,17 +4,27 @@ DockerEnvironmentHelpers
 
 Helper module for running tests inside an isolated Docker container. The container has
 git, gh (GitHub CLI), rokit, wally, and lune pre-installed for testing the full CLI
-workflow without affecting the host system.
+workflow without affecting the host system. It also contains the standalone executable
+built from the current source, and the source itself for running via lune.
+
+Call prepare() once in a beforeAll hook before creating any environments, and
+cleanupAll() in an afterAll hook to remove containers left behind by failed tests.
 
 --]]
 
 local fs = require("@lune/fs")
 local process = require("@lune/process")
 
+local BUILD_OUTPUT_DIR = "Build/Docker"
+local BUILD_TARGET = "linux-x86_64"
+local CLI_SOURCE_DIR = "/opt/luauproject-cli"
 local CONTAINER_WORK_DIR = "/workspace"
 local DOCKER_IMAGE = "luauproject-cli-test"
 
 local DockerEnvironmentHelpers = {}
+
+local activeContainers: { [string]: boolean } = {}
+local isPrepared = false
 
 export type DockerEnv = {
     containerId: string,
@@ -27,6 +37,7 @@ export type DockerEnv = {
     copyToContainer: (hostPath: string, containerPath: string) -> (),
     copyFromContainer: (containerPath: string, hostPath: string) -> (),
     runCli: (args: { string }?) -> ExecResult,
+    runCliFromSource: (args: { string }?) -> ExecResult,
     initGit: () -> (),
     gitCommit: (message: string) -> (),
 }
@@ -38,24 +49,88 @@ export type ExecResult = {
     stderr: string,
 }
 
-local function ensureImageExists()
-    local result = process.exec("docker", { "image", "inspect", DOCKER_IMAGE })
-    if not result.ok then
-        local dockerfilePath = `{process.cwd}/Tests/Dockerfile`
-        assert(fs.isFile(dockerfilePath), `Dockerfile not found at {dockerfilePath}`)
-
-        print("Building Docker test image...")
-        local buildResult = process.exec("docker", {
-            "build",
-            "-t",
-            DOCKER_IMAGE,
-            "-f",
-            dockerfilePath,
-            process.cwd,
-        })
-
-        assert(buildResult.ok, `Failed to build Docker image: {buildResult.stderr}`)
+local function formatOutput(output: string): string
+    if output:match("^%s*$") then
+        return "(empty)"
     end
+    return (output:gsub("%s+$", ""))
+end
+
+--[[
+    Formats an exec result into a readable block containing the exit code, stdout, and
+    stderr, for use in assertion failures and error messages.
+
+    > result - The result to format
+]]
+function DockerEnvironmentHelpers.formatExecResult(result: ExecResult): string
+    local stdout = formatOutput(result.stdout)
+    local stderr = formatOutput(result.stderr)
+    return `Exited with code {result.code}.\n\n[stdout]\n{stdout}\n\n[stderr]\n{stderr}`
+end
+
+--[[
+    Fails the current test with the exit code, stdout, and stderr if the result is not
+    ok, so that failed CLI runs are diagnosable from the test output alone.
+
+    > result - The result to check
+]]
+function DockerEnvironmentHelpers.expectSuccess(result: ExecResult)
+    if not result.ok then
+        error(`Expected command to succeed. {DockerEnvironmentHelpers.formatExecResult(result)}`, 2)
+    end
+end
+
+local function buildExecutable()
+    print(`Building "{BUILD_TARGET}" executable for Docker tests...`)
+    local result = process.exec("lune", {
+        "run",
+        "Scripts/BuildExecutable.luau",
+        BUILD_TARGET,
+        BUILD_OUTPUT_DIR,
+    })
+    assert(result.ok, `Failed to build executable. {DockerEnvironmentHelpers.formatExecResult(result)}`)
+end
+
+local function buildImage()
+    local dockerfilePath = `{process.cwd}/Tests/Dockerfile`
+    assert(fs.isFile(dockerfilePath), `Dockerfile not found at "{dockerfilePath}".`)
+
+    -- Always build so the image never goes stale. Docker's layer cache makes this fast
+    -- when nothing has changed.
+    print(`Building "{DOCKER_IMAGE}" Docker image...`)
+    local result = process.exec("docker", {
+        "build",
+        "-t",
+        DOCKER_IMAGE,
+        "-f",
+        dockerfilePath,
+        process.cwd,
+    })
+    assert(result.ok, `Failed to build Docker image. {DockerEnvironmentHelpers.formatExecResult(result)}`)
+end
+
+--[[
+    Builds the standalone executable and the Docker test image from the current source.
+    Only does work on the first call, so it's safe to call from several beforeAll hooks.
+]]
+function DockerEnvironmentHelpers.prepare()
+    if isPrepared then
+        return
+    end
+    buildExecutable()
+    buildImage()
+    isPrepared = true
+end
+
+--[[
+    Removes every container created by create() that hasn't been cleaned up yet, such as
+    those left behind by tests that failed before calling cleanup().
+]]
+function DockerEnvironmentHelpers.cleanupAll()
+    for containerId in activeContainers do
+        process.exec("docker", { "rm", "-f", containerId })
+    end
+    table.clear(activeContainers)
 end
 
 function DockerEnvironmentHelpers.isDockerAvailable(): boolean
@@ -64,7 +139,7 @@ function DockerEnvironmentHelpers.isDockerAvailable(): boolean
 end
 
 function DockerEnvironmentHelpers.create(): DockerEnv
-    ensureImageExists()
+    assert(isPrepared, "Call DockerEnvironmentHelpers.prepare() in a beforeAll hook before create().")
 
     local timestamp = tostring(os.time()) .. tostring(math.random(10000, 99999))
     local containerName = `luauproject-test-{timestamp}`
@@ -81,15 +156,17 @@ function DockerEnvironmentHelpers.create(): DockerEnv
         "3600",
     })
 
-    assert(startResult.ok, `Failed to start Docker container: {startResult.stderr}`)
+    assert(startResult.ok, `Failed to start Docker container. {DockerEnvironmentHelpers.formatExecResult(startResult)}`)
 
     local containerId = startResult.stdout:gsub("%s+", "")
+    activeContainers[containerId] = true
 
     local env: DockerEnv = {
         containerId = containerId,
 
         cleanup = function()
             process.exec("docker", { "rm", "-f", containerId })
+            activeContainers[containerId] = nil
         end,
 
         exec = function(command: string, args: { string }?): ExecResult
@@ -176,6 +253,29 @@ function DockerEnvironmentHelpers.create(): DockerEnv
 
         runCli = function(args: { string }?): ExecResult
             local dockerArgs = { "exec", containerId, "luauproject" }
+            if args then
+                for _, arg in args do
+                    table.insert(dockerArgs, arg)
+                end
+            end
+            return process.exec("docker", dockerArgs)
+        end,
+
+        runCliFromSource = function(args: { string }?): ExecResult
+            -- Run from the source directory so the rokit shim resolves the lune version
+            -- pinned in its rokit.toml, and pass LUAUPROJECT_CWD so the CLI still treats
+            -- the workspace as the directory it was invoked from
+            local dockerArgs = {
+                "exec",
+                "-w",
+                CLI_SOURCE_DIR,
+                "-e",
+                `LUAUPROJECT_CWD={CONTAINER_WORK_DIR}`,
+                containerId,
+                "lune",
+                "run",
+                "Source/LuauprojectCli",
+            }
             if args then
                 for _, arg in args do
                     table.insert(dockerArgs, arg)

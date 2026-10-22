@@ -2,11 +2,14 @@
 
 NewCommandTest.spec
 
-Integration tests for the `luauproject new` command. These tests run in an
-isolated Docker environment to ensure the CLI works correctly without
-affecting the host system.
+Integration tests for the `luauproject new` command. These tests run in an isolated
+Docker environment to ensure the CLI works correctly without affecting the host system.
+They cover both the standalone executable built from the current source and running the
+source directly via lune.
 
 --]]
+
+local fs = require("@lune/fs")
 
 local DockerEnvironmentHelpers = require("@tests/Helpers/DockerEnvironmentHelpers")
 
@@ -16,6 +19,8 @@ local ALL_FLAGS = {
     "--nogithub",
     "--privatepackage",
 }
+
+local expectSuccess = DockerEnvironmentHelpers.expectSuccess
 
 local function buildArgs(
     name: string,
@@ -59,14 +64,48 @@ return function()
             return
         end
 
+        beforeAll(function()
+            DockerEnvironmentHelpers.prepare()
+        end)
+
+        afterAll(function()
+            DockerEnvironmentHelpers.cleanupAll()
+        end)
+
         describe("with built executable", function()
+            describe("standalone executable", function()
+                it("should be a compiled binary rather than a script", function()
+                    local env = DockerEnvironmentHelpers.create()
+
+                    local result = env.exec("head", { "-c", "4", "/usr/local/bin/luauproject" })
+
+                    expectSuccess(result)
+                    expect(result.stdout).to.equal("\127ELF")
+
+                    env.cleanup()
+                end)
+
+                it("should report the version from the VERSION file", function()
+                    local env = DockerEnvironmentHelpers.create()
+
+                    local result = env.runCli({ "--version" })
+
+                    expectSuccess(result)
+                    local expectedVersion = fs.readFile("VERSION"):gsub("%s+", "")
+                    local reportedVersion = result.stdout:match("(%S+)%s*$")
+                    expect(reportedVersion).to.equal(expectedVersion)
+
+                    env.cleanup()
+                end)
+            end)
+
             describe("basic project creation", function()
                 it("should create a project with all required flags", function()
                     local env = DockerEnvironmentHelpers.create()
 
                     local result = env.runCli(buildArgs("my-test-project", "A test project", "test-user"))
 
-                    expect(result.ok).to.equal(true)
+                    expectSuccess(result)
                     expect(env.dirExists("/workspace/my-test-project")).to.equal(true)
                     expect(env.fileExists("/workspace/my-test-project/wally.toml")).to.equal(true)
                     expect(env.fileExists("/workspace/my-test-project/README.md")).to.equal(true)
@@ -80,7 +119,7 @@ return function()
 
                     local result = env.runCli(buildArgs("My Cool Project", "Test", "test-user"))
 
-                    expect(result.ok).to.equal(true)
+                    expectSuccess(result)
                     expect(env.dirExists("/workspace/my-cool-project")).to.equal(true)
 
                     env.cleanup()
@@ -89,7 +128,7 @@ return function()
                 it("should update wally.toml with project info", function()
                     local env = DockerEnvironmentHelpers.create()
 
-                    env.runCli(buildArgs("my-test-project", "My custom description", "test-user"))
+                    expectSuccess(env.runCli(buildArgs("my-test-project", "My custom description", "test-user")))
 
                     local wallyContent = env.readFile("/workspace/my-test-project/wally.toml")
                     expect(wallyContent:match("test%-user/my%-test%-project")).to.be.ok()
@@ -101,7 +140,7 @@ return function()
                 it("should update README.md with project name and description", function()
                     local env = DockerEnvironmentHelpers.create()
 
-                    env.runCli(buildArgs("my-test-project", "My custom description", "test-user"))
+                    expectSuccess(env.runCli(buildArgs("my-test-project", "My custom description", "test-user")))
 
                     local readmeContent = env.readFile("/workspace/my-test-project/README.md")
                     expect(readmeContent:match("# my%-test%-project")).to.be.ok()
@@ -113,7 +152,7 @@ return function()
                 it("should rename source directory to PascalCase", function()
                     local env = DockerEnvironmentHelpers.create()
 
-                    env.runCli(buildArgs("my-test-project", "Test", "test-user"))
+                    expectSuccess(env.runCli(buildArgs("my-test-project", "Test", "test-user")))
 
                     expect(env.dirExists("/workspace/my-test-project/Source/MyTestProject")).to.equal(true)
                     expect(env.dirExists("/workspace/my-test-project/Source/LuauPackageTemplate")).to.equal(false)
@@ -124,7 +163,7 @@ return function()
                 it("should create VERSION file with 0.0.0", function()
                     local env = DockerEnvironmentHelpers.create()
 
-                    env.runCli(buildArgs("my-test-project", "Test", "test-user"))
+                    expectSuccess(env.runCli(buildArgs("my-test-project", "Test", "test-user")))
 
                     local versionContent = env.readFile("/workspace/my-test-project/VERSION")
                     expect(versionContent:match("0%.0%.0")).to.be.ok()
@@ -135,7 +174,7 @@ return function()
                 it("should create CHANGELOG.md", function()
                     local env = DockerEnvironmentHelpers.create()
 
-                    env.runCli(buildArgs("my-test-project", "Test", "test-user"))
+                    expectSuccess(env.runCli(buildArgs("my-test-project", "Test", "test-user")))
 
                     local changelogContent = env.readFile("/workspace/my-test-project/CHANGELOG.md")
                     expect(changelogContent:match("# Changelog")).to.be.ok()
@@ -147,10 +186,10 @@ return function()
                 it("should create initial git commit", function()
                     local env = DockerEnvironmentHelpers.create()
 
-                    env.runCli(buildArgs("my-test-project", "Test", "test-user"))
+                    expectSuccess(env.runCli(buildArgs("my-test-project", "Test", "test-user")))
 
                     local result = env.exec("git", { "-C", "/workspace/my-test-project", "log", "--oneline" })
-                    expect(result.ok).to.equal(true)
+                    expectSuccess(result)
                     expect(result.stdout:match("Initial commit")).to.be.ok()
 
                     env.cleanup()
@@ -168,7 +207,7 @@ return function()
                         "cd /workspace/projects && luauproject new --name test-proj --description Test --owner test-user --nogithub --privatepackage --path /workspace/projects/test-proj",
                     })
 
-                    expect(result.ok).to.equal(true)
+                    expectSuccess(result)
                     expect(env.dirExists("/workspace/projects/test-proj")).to.equal(true)
 
                     env.cleanup()
@@ -181,7 +220,7 @@ return function()
 
                     local result = env.runCli(buildArgs("test-proj", "Test", "test-user", "/workspace/custom-location"))
 
-                    expect(result.ok).to.equal(true)
+                    expectSuccess(result)
                     expect(env.dirExists("/workspace/custom-location/test-proj")).to.equal(true)
 
                     env.cleanup()
@@ -197,7 +236,7 @@ return function()
                         "cd /workspace/a/b/c/d/e && luauproject new --name deep-proj --description Test --owner test-user --nogithub --privatepackage --path /workspace/a/b/c/d/e/deep-proj",
                     })
 
-                    expect(result.ok).to.equal(true)
+                    expectSuccess(result)
                     expect(env.dirExists("/workspace/a/b/c/d/e/deep-proj")).to.equal(true)
 
                     env.cleanup()
@@ -211,7 +250,7 @@ return function()
                     local result =
                         env.exec("/usr/local/bin/luauproject", buildArgs("abs-path-proj", "Test", "test-user"))
 
-                    expect(result.ok).to.equal(true)
+                    expectSuccess(result)
                     expect(env.dirExists("/workspace/abs-path-proj")).to.equal(true)
 
                     env.cleanup()
@@ -220,11 +259,11 @@ return function()
                 it("should work when executable is copied to different location", function()
                     local env = DockerEnvironmentHelpers.create()
 
-                    env.exec("cp", { "/usr/local/bin/luauproject", "/tmp/my-cli" })
+                    expectSuccess(env.exec("cp", { "/usr/local/bin/luauproject", "/tmp/my-cli" }))
 
                     local result = env.exec("/tmp/my-cli", buildArgs("alt-loc-proj", "Test", "test-user"))
 
-                    expect(result.ok).to.equal(true)
+                    expectSuccess(result)
                     expect(env.dirExists("/workspace/alt-loc-proj")).to.equal(true)
 
                     env.cleanup()
@@ -238,7 +277,7 @@ return function()
                         "which luauproject && luauproject new --name path-proj --description Test --owner test-user --nogithub --privatepackage --path /workspace/path-proj",
                     })
 
-                    expect(result.ok).to.equal(true)
+                    expectSuccess(result)
                     expect(env.dirExists("/workspace/path-proj")).to.equal(true)
 
                     env.cleanup()
@@ -251,7 +290,7 @@ return function()
 
                     local result = env.runCli(buildArgs("no-gh-proj", "Test", "test-user"))
 
-                    expect(result.ok).to.equal(true)
+                    expectSuccess(result)
                     expect(result.stdout:match("github.com/test%-user/no%-gh%-proj")).to.never.be.ok()
 
                     env.cleanup()
@@ -266,7 +305,7 @@ return function()
                         buildArgs("special-desc", "A project with 'quotes' and \"double quotes\"", "test-user")
                     )
 
-                    expect(result.ok).to.equal(true)
+                    expectSuccess(result)
 
                     env.cleanup()
                 end)
@@ -276,7 +315,7 @@ return function()
 
                     local result = env.runCli(buildArgs("simple", "Test", "test-user"))
 
-                    expect(result.ok).to.equal(true)
+                    expectSuccess(result)
                     expect(env.dirExists("/workspace/simple")).to.equal(true)
                     expect(env.dirExists("/workspace/simple/Source/Simple")).to.equal(true)
 
@@ -288,7 +327,7 @@ return function()
 
                     local result = env.runCli(buildArgs("project123", "Test", "test-user"))
 
-                    expect(result.ok).to.equal(true)
+                    expectSuccess(result)
                     expect(env.dirExists("/workspace/project123")).to.equal(true)
 
                     env.cleanup()
@@ -297,10 +336,22 @@ return function()
         end)
 
         describe("with lune from source", function()
-            it("should work when running via lune", function()
+            it("should create a project when running via lune", function()
                 local env = DockerEnvironmentHelpers.create()
 
-                env.exec("mkdir", { "-p", "/workspace/cli-source" })
+                local result = env.runCliFromSource(buildArgs("source-proj", "A source project", "test-user"))
+
+                expectSuccess(result)
+                expect(result.stdout:match("Project created successfully")).to.be.ok()
+                expect(env.dirExists("/workspace/source-proj/.git")).to.equal(true)
+                expect(env.dirExists("/workspace/source-proj/Source/SourceProj")).to.equal(true)
+
+                local wallyContent = env.readFile("/workspace/source-proj/wally.toml")
+                expect(wallyContent:match("test%-user/source%-proj")).to.be.ok()
+                expect(wallyContent:match("A source project")).to.be.ok()
+
+                local readmeContent = env.readFile("/workspace/source-proj/README.md")
+                expect(readmeContent:match("# source%-proj")).to.be.ok()
 
                 env.cleanup()
             end)

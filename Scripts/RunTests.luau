@@ -19,6 +19,7 @@ local process = require("@lune/process")
 
 local UNIT_TESTS = {
     { Name = "BuildTest", Func = require("@tests/BuildTest.spec") },
+    { Name = "DockerEnvironmentHelpersTest", Func = require("@tests/DockerEnvironmentHelpersTest.spec") },
     { Name = "HelpersTest", Func = require("@tests/HelpersTest.spec") },
     { Name = "LogHelpersTest", Func = require("@tests/LogHelpersTest.spec") },
     { Name = "PathHelpersTest", Func = require("@tests/PathHelpersTest.spec") },

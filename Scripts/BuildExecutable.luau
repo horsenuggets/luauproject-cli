@@ -4,9 +4,10 @@
 
 BuildExecutable
 
-Compiles the luauproject CLI to a standalone executable.
+Compiles the luauproject CLI to a standalone executable. The target defaults to the host
+platform and the output directory defaults to Build/.
 
-[Usage] ./Scripts/BuildExecutable.luau [target]
+[Usage] ./Scripts/BuildExecutable.luau [target] [outputDir]
 
 --]]
 
@@ -22,6 +23,7 @@ local function buildExecutable()
     Toolkit.build({
         Name = "luauproject",
         EntryPoint = "Source/LuauprojectCli",
+        OutputDir = process.args[2],
         Target = process.args[1],
     })
 end
