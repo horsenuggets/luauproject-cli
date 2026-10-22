@@ -92,7 +92,8 @@ return function()
 
                     expectSuccess(result)
                     local expectedVersion = fs.readFile("VERSION"):gsub("%s+", "")
-                    expect(result.stdout:find(expectedVersion, 1, true)).to.be.ok()
+                    local reportedVersion = result.stdout:match("(%S+)%s*$")
+                    expect(reportedVersion).to.equal(expectedVersion)
 
                     env.cleanup()
                 end)
