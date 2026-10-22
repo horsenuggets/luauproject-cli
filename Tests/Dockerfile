@@ -28,14 +28,19 @@ RUN git config --global user.email "test@example.com" && \
 RUN curl -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | bash
 ENV PATH="/root/.rokit/bin:${PATH}"
 
-# Trust all tools used by the luau-package-template and install Lune/Wally globally
+# Trust all tools used by this repo and the luau-package-template
 RUN rokit trust horsenuggets/lune && \
     rokit trust horsenuggets/wally && \
     rokit trust horsenuggets/luau-lsp && \
     rokit trust johnnymorganz/stylua && \
-    rokit trust horsenuggets/rojo && \
-    rokit add horsenuggets/lune@0.10.4-horse.14.2 --global && \
-    rokit add horsenuggets/wally@0.3.2-horse.5.1 --global
+    rokit trust horsenuggets/rojo
+
+# Install the exact tool versions pinned in rokit.toml. Rokit shims resolve versions from
+# the nearest rokit.toml, so the CLI wrapper below (which runs from the repo directory)
+# fails if these versions aren't installed. Copying rokit.toml on its own keeps this layer
+# cached until the pins change.
+COPY rokit.toml /opt/luauproject-cli/rokit.toml
+RUN cd /opt/luauproject-cli && rokit install
 
 # Create mock gh CLI script
 COPY Tests/MockGH.sh /usr/local/bin/gh
