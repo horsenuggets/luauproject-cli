@@ -4,7 +4,8 @@ DockerEnvironmentHelpers
 
 Helper module for running tests inside an isolated Docker container. The container has
 git, gh (GitHub CLI), rokit, wally, and lune pre-installed for testing the full CLI
-workflow without affecting the host system.
+workflow without affecting the host system. It also contains the standalone executable
+built from the current source, and the source itself for running via lune.
 
 Call prepare() once in a beforeAll hook before creating any environments, and
 cleanupAll() in an afterAll hook to remove containers left behind by failed tests.
@@ -14,6 +15,8 @@ cleanupAll() in an afterAll hook to remove containers left behind by failed test
 local fs = require("@lune/fs")
 local process = require("@lune/process")
 
+local BUILD_OUTPUT_DIR = "Build/Docker"
+local BUILD_TARGET = "linux-x86_64"
 local CONTAINER_WORK_DIR = "/workspace"
 local DOCKER_IMAGE = "luauproject-cli-test"
 
@@ -75,6 +78,17 @@ function DockerEnvironmentHelpers.expectSuccess(result: ExecResult)
     end
 end
 
+local function buildExecutable()
+    print(`Building "{BUILD_TARGET}" executable for Docker tests...`)
+    local result = process.exec("lune", {
+        "run",
+        "Scripts/BuildExecutable.luau",
+        BUILD_TARGET,
+        BUILD_OUTPUT_DIR,
+    })
+    assert(result.ok, `Failed to build executable. {DockerEnvironmentHelpers.formatExecResult(result)}`)
+end
+
 local function buildImage()
     local dockerfilePath = `{process.cwd}/Tests/Dockerfile`
     assert(fs.isFile(dockerfilePath), `Dockerfile not found at "{dockerfilePath}".`)
@@ -94,13 +108,14 @@ local function buildImage()
 end
 
 --[[
-    Builds the Docker test image from the current source. Only does work on the first
-    call, so it's safe to call from several beforeAll hooks.
+    Builds the standalone executable and the Docker test image from the current source.
+    Only does work on the first call, so it's safe to call from several beforeAll hooks.
 ]]
 function DockerEnvironmentHelpers.prepare()
     if isPrepared then
         return
     end
+    buildExecutable()
     buildImage()
     isPrepared = true
 end

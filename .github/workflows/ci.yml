@@ -232,11 +232,9 @@ jobs:
       - name: Setup Rokit
         uses: CompeyDev/setup-rokit@v0.1.2
 
+      # The Docker test helpers build the executable and image themselves
       - name: Install dependencies
         run: wally install
-
-      - name: Build executable
-        run: ./Scripts/BuildExecutable.luau linux-x86_64
 
       - name: Run Docker tests
         run: ./Scripts/RunTests.luau --docker

@@ -2,11 +2,14 @@
 
 NewCommandTest.spec
 
-Integration tests for the `luauproject new` command. These tests run in an
-isolated Docker environment to ensure the CLI works correctly without
-affecting the host system.
+Integration tests for the `luauproject new` command. These tests run in an isolated
+Docker environment to ensure the CLI works correctly without affecting the host system.
+They cover both the standalone executable built from the current source and running the
+source directly via lune.
 
 --]]
+
+local fs = require("@lune/fs")
 
 local DockerEnvironmentHelpers = require("@tests/Helpers/DockerEnvironmentHelpers")
 
@@ -70,6 +73,31 @@ return function()
         end)
 
         describe("with built executable", function()
+            describe("standalone executable", function()
+                it("should be a compiled binary rather than a script", function()
+                    local env = DockerEnvironmentHelpers.create()
+
+                    local result = env.exec("head", { "-c", "4", "/usr/local/bin/luauproject" })
+
+                    expectSuccess(result)
+                    expect(result.stdout).to.equal("\127ELF")
+
+                    env.cleanup()
+                end)
+
+                it("should report the version from the VERSION file", function()
+                    local env = DockerEnvironmentHelpers.create()
+
+                    local result = env.runCli({ "--version" })
+
+                    expectSuccess(result)
+                    local expectedVersion = fs.readFile("VERSION"):gsub("%s+", "")
+                    expect(result.stdout:find(expectedVersion, 1, true)).to.be.ok()
+
+                    env.cleanup()
+                end)
+            end)
+
             describe("basic project creation", function()
                 it("should create a project with all required flags", function()
                     local env = DockerEnvironmentHelpers.create()
