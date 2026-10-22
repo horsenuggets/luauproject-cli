@@ -38,6 +38,37 @@ export type ExecResult = {
     stderr: string,
 }
 
+local function formatOutput(output: string): string
+    if output:match("^%s*$") then
+        return "(empty)"
+    end
+    return (output:gsub("%s+$", ""))
+end
+
+--[[
+    Formats an exec result into a readable block containing the exit code, stdout, and
+    stderr, for use in assertion failures and error messages.
+
+    > result - The result to format
+]]
+function DockerEnvironmentHelpers.formatExecResult(result: ExecResult): string
+    local stdout = formatOutput(result.stdout)
+    local stderr = formatOutput(result.stderr)
+    return `Exited with code {result.code}.\n\n[stdout]\n{stdout}\n\n[stderr]\n{stderr}`
+end
+
+--[[
+    Fails the current test with the exit code, stdout, and stderr if the result is not
+    ok, so that failed CLI runs are diagnosable from the test output alone.
+
+    > result - The result to check
+]]
+function DockerEnvironmentHelpers.expectSuccess(result: ExecResult)
+    if not result.ok then
+        error(`Expected command to succeed. {DockerEnvironmentHelpers.formatExecResult(result)}`, 2)
+    end
+end
+
 local function ensureImageExists()
     local result = process.exec("docker", { "image", "inspect", DOCKER_IMAGE })
     if not result.ok then
