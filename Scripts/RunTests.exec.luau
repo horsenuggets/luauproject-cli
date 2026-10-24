@@ -2,15 +2,15 @@
 
 --[[
 
-RunTests
+RunTests.exec
 
 Executes all test suites and exits with appropriate status code. Supports running tests
 locally or in a Docker container for full isolation.
 
 [Usage]
-> Scripts/RunTests.luau              # Run all tests
-> Scripts/RunTests.luau --no-docker  # Skip Docker tests
-> Scripts/RunTests.luau --docker     # Only run Docker tests
+> ./Scripts/RunTests.exec.luau              # Run all tests
+> ./Scripts/RunTests.exec.luau --no-docker  # Skip Docker tests
+> ./Scripts/RunTests.exec.luau --docker     # Only run Docker tests
 
 --]]
 
@@ -48,7 +48,9 @@ local function parseArgs(): { noDocker: boolean, dockerOnly: boolean }
     return { noDocker = noDocker, dockerOnly = dockerOnly }
 end
 
-local function runTests()
+const RunTests = {}
+
+function RunTests.exec()
     local options = parseArgs()
     local tests = {}
 
@@ -74,4 +76,4 @@ local function runTests()
     process.exit(if passed then 0 else 1)
 end
 
-runTests()
+RunTests.exec()

@@ -84,7 +84,7 @@ local function buildExecutable()
     print(`Building "{BUILD_TARGET}" executable for Docker tests...`)
     local result = process.exec("lune", {
         "run",
-        "Scripts/BuildExecutable.luau",
+        "Scripts/BuildExecutable.exec.luau",
         BUILD_TARGET,
         BUILD_OUTPUT_DIR,
     })

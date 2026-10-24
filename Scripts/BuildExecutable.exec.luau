@@ -2,19 +2,21 @@
 
 --[[
 
-BuildExecutable
+BuildExecutable.exec
 
 Compiles the luauproject CLI to a standalone executable. The target defaults to the host
 platform and the output directory defaults to Build/.
 
-[Usage] ./Scripts/BuildExecutable.luau [target] [outputDir]
+[Usage] ./Scripts/BuildExecutable.exec.luau [target] [outputDir]
 
 --]]
 
 local Toolkit = require("@packages/Commandline").Toolkit
 local process = require("@lune/process")
 
-local function buildExecutable()
+const BuildExecutable = {}
+
+function BuildExecutable.exec()
     Toolkit.generateVersion({
         VersionFile = "VERSION",
         OutputPath = "Source/LuauprojectCli/LuauprojectCommand/__VERSION__.luau",
@@ -28,4 +30,4 @@ local function buildExecutable()
     })
 end
 
-buildExecutable()
+BuildExecutable.exec()
