@@ -12,18 +12,18 @@ cleanupAll() in an afterAll hook to remove containers left behind by failed test
 
 --]]
 
-local fs = require("@lune/fs")
-local process = require("@lune/process")
+const fs = require("@lune/fs")
+const process = require("@lune/process")
 
-local BUILD_OUTPUT_DIR = "Build/Docker"
-local BUILD_TARGET = "linux-x86_64"
-local CLI_SOURCE_DIR = "/opt/luauproject-cli"
-local CONTAINER_WORK_DIR = "/workspace"
-local DOCKER_IMAGE = "luauproject-cli-test"
+const BUILD_OUTPUT_DIR = "Build/Docker"
+const BUILD_TARGET = "linux-x86_64"
+const CLI_SOURCE_DIR = "/opt/luauproject-cli"
+const CONTAINER_WORK_DIR = "/workspace"
+const DOCKER_IMAGE = "luauproject-cli-test"
 
-local DockerEnvironmentHelpers = {}
+const DockerEnvironmentHelpers = {}
 
-local activeContainers: { [string]: boolean } = {}
+const activeContainers: { [string]: boolean } = {}
 local isPrepared = false
 
 export type DockerEnv = {
@@ -49,7 +49,7 @@ export type ExecResult = {
     stderr: string,
 }
 
-local function formatOutput(output: string): string
+const function formatOutput(output: string): string
     if output:match("^%s*$") then
         return "(empty)"
     end
@@ -63,8 +63,8 @@ end
     > result - The result to format
 ]]
 function DockerEnvironmentHelpers.formatExecResult(result: ExecResult): string
-    local stdout = formatOutput(result.stdout)
-    local stderr = formatOutput(result.stderr)
+    const stdout = formatOutput(result.stdout)
+    const stderr = formatOutput(result.stderr)
     return `Exited with code {result.code}.\n\n[stdout]\n{stdout}\n\n[stderr]\n{stderr}`
 end
 
@@ -80,9 +80,9 @@ function DockerEnvironmentHelpers.expectSuccess(result: ExecResult)
     end
 end
 
-local function buildExecutable()
+const function buildExecutable()
     print(`Building "{BUILD_TARGET}" executable for Docker tests...`)
-    local result = process.exec("lune", {
+    const result = process.exec("lune", {
         "run",
         "Scripts/BuildExecutable.exec.luau",
         BUILD_TARGET,
@@ -91,14 +91,14 @@ local function buildExecutable()
     assert(result.ok, `Failed to build executable. {DockerEnvironmentHelpers.formatExecResult(result)}`)
 end
 
-local function buildImage()
-    local dockerfilePath = `{process.cwd}/Tests/Dockerfile`
+const function buildImage()
+    const dockerfilePath = `{process.cwd}/Tests/Dockerfile`
     assert(fs.isFile(dockerfilePath), `Dockerfile not found at "{dockerfilePath}".`)
 
     -- Always build so the image never goes stale. Docker's layer cache makes this fast
     -- when nothing has changed.
     print(`Building "{DOCKER_IMAGE}" Docker image...`)
-    local result = process.exec("docker", {
+    const result = process.exec("docker", {
         "build",
         "-t",
         DOCKER_IMAGE,
@@ -134,17 +134,17 @@ function DockerEnvironmentHelpers.cleanupAll()
 end
 
 function DockerEnvironmentHelpers.isDockerAvailable(): boolean
-    local result = process.exec("docker", { "info" })
+    const result = process.exec("docker", { "info" })
     return result.ok
 end
 
 function DockerEnvironmentHelpers.create(): DockerEnv
     assert(isPrepared, "Call DockerEnvironmentHelpers.prepare() in a beforeAll hook before create().")
 
-    local timestamp = tostring(os.time()) .. tostring(math.random(10000, 99999))
-    local containerName = `luauproject-test-{timestamp}`
+    const timestamp = tostring(os.time()) .. tostring(math.random(10000, 99999))
+    const containerName = `luauproject-test-{timestamp}`
 
-    local startResult = process.exec("docker", {
+    const startResult = process.exec("docker", {
         "run",
         "-d",
         "--name",
@@ -158,10 +158,10 @@ function DockerEnvironmentHelpers.create(): DockerEnv
 
     assert(startResult.ok, `Failed to start Docker container. {DockerEnvironmentHelpers.formatExecResult(startResult)}`)
 
-    local containerId = startResult.stdout:gsub("%s+", "")
+    const containerId = startResult.stdout:gsub("%s+", "")
     activeContainers[containerId] = true
 
-    local env: DockerEnv = {
+    const env: DockerEnv = {
         containerId = containerId,
 
         cleanup = function()
@@ -170,7 +170,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
         end,
 
         exec = function(command: string, args: { string }?): ExecResult
-            local dockerArgs = { "exec", containerId, command }
+            const dockerArgs = { "exec", containerId, command }
             if args then
                 for _, arg in args do
                     table.insert(dockerArgs, arg)
@@ -180,11 +180,11 @@ function DockerEnvironmentHelpers.create(): DockerEnv
         end,
 
         writeFile = function(containerPath: string, content: string)
-            local timestamp = tostring(os.time()) .. tostring(math.random(10000, 99999))
-            local tempFile = `/tmp/docker-write-{timestamp}`
+            const timestamp = tostring(os.time()) .. tostring(math.random(10000, 99999))
+            const tempFile = `/tmp/docker-write-{timestamp}`
             fs.writeFile(tempFile, content)
 
-            local result = process.exec("docker", {
+            const result = process.exec("docker", {
                 "cp",
                 tempFile,
                 `{containerId}:{containerPath}`,
@@ -195,10 +195,10 @@ function DockerEnvironmentHelpers.create(): DockerEnv
         end,
 
         readFile = function(containerPath: string): string
-            local timestamp = tostring(os.time()) .. tostring(math.random(10000, 99999))
-            local tempFile = `/tmp/docker-read-{timestamp}`
+            const timestamp = tostring(os.time()) .. tostring(math.random(10000, 99999))
+            const tempFile = `/tmp/docker-read-{timestamp}`
 
-            local result = process.exec("docker", {
+            const result = process.exec("docker", {
                 "cp",
                 `{containerId}:{containerPath}`,
                 tempFile,
@@ -206,13 +206,13 @@ function DockerEnvironmentHelpers.create(): DockerEnv
 
             assert(result.ok, `Failed to read file from container: {result.stderr}`)
 
-            local content = fs.readFile(tempFile)
+            const content = fs.readFile(tempFile)
             fs.removeFile(tempFile)
             return content
         end,
 
         fileExists = function(containerPath: string): boolean
-            local result = process.exec("docker", {
+            const result = process.exec("docker", {
                 "exec",
                 containerId,
                 "test",
@@ -223,7 +223,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
         end,
 
         dirExists = function(containerPath: string): boolean
-            local result = process.exec("docker", {
+            const result = process.exec("docker", {
                 "exec",
                 containerId,
                 "test",
@@ -234,7 +234,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
         end,
 
         copyToContainer = function(hostPath: string, containerPath: string)
-            local result = process.exec("docker", {
+            const result = process.exec("docker", {
                 "cp",
                 hostPath,
                 `{containerId}:{containerPath}`,
@@ -243,7 +243,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
         end,
 
         copyFromContainer = function(containerPath: string, hostPath: string)
-            local result = process.exec("docker", {
+            const result = process.exec("docker", {
                 "cp",
                 `{containerId}:{containerPath}`,
                 hostPath,
@@ -252,7 +252,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
         end,
 
         runCli = function(args: { string }?): ExecResult
-            local dockerArgs = { "exec", containerId, "luauproject" }
+            const dockerArgs = { "exec", containerId, "luauproject" }
             if args then
                 for _, arg in args do
                     table.insert(dockerArgs, arg)
@@ -265,7 +265,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
             -- Run from the source directory so the rokit shim resolves the lune version
             -- pinned in its rokit.toml, and pass LUAUPROJECT_CWD so the CLI still treats
             -- the workspace as the directory it was invoked from
-            local dockerArgs = {
+            const dockerArgs = {
                 "exec",
                 "-w",
                 CLI_SOURCE_DIR,

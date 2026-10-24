@@ -11,8 +11,8 @@ platform and the output directory defaults to Build/.
 
 --]]
 
-local Toolkit = require("@packages/Commandline").Toolkit
-local process = require("@lune/process")
+const Toolkit = require("@packages/Commandline").Toolkit
+const process = require("@lune/process")
 
 const BuildExecutable = {}
 

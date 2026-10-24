@@ -10,7 +10,7 @@ Reads the VERSION file and generates a version module for embedding at build tim
 
 --]]
 
-local Toolkit = require("@packages/Commandline").Toolkit
+const Toolkit = require("@packages/Commandline").Toolkit
 
 const GenerateVersion = {}
 

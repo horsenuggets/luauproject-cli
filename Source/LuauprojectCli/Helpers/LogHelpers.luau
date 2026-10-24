@@ -7,16 +7,16 @@ file. Logs are stored in ~/.luauproject-cli/logs/project-creations.jsonl.
 
 --]]
 
-local PathHelpers = require("@self/PathHelpers")
-local datetime = require("@lune/datetime")
-local fs = require("@lune/fs")
-local process = require("@lune/process")
-local serde = require("@lune/serde")
+const PathHelpers = require("@self/PathHelpers")
+const datetime = require("@lune/datetime")
+const fs = require("@lune/fs")
+const process = require("@lune/process")
+const serde = require("@lune/serde")
 
-local LOG_DIR_NAME = "logs"
-local LOG_FILE_NAME = "project-creations.jsonl"
+const LOG_DIR_NAME = "logs"
+const LOG_FILE_NAME = "project-creations.jsonl"
 
-local LogHelpers = {}
+const LogHelpers = {}
 
 export type ProjectCreationEntry = {
     timestamp: string,
@@ -40,7 +40,7 @@ export type ProjectCreationEntry = {
 }
 
 function LogHelpers.getLogDir(): string
-    local home = process.env.HOME or process.env.USERPROFILE or ""
+    const home = process.env.HOME or process.env.USERPROFILE or ""
     return PathHelpers.join(home, ".luauproject-cli", LOG_DIR_NAME)
 end
 
@@ -49,14 +49,14 @@ function LogHelpers.getLogFilePath(): string
 end
 
 function LogHelpers.ensureLogDir()
-    local logDir = LogHelpers.getLogDir()
+    const logDir = LogHelpers.getLogDir()
     if not fs.isDir(logDir) then
         fs.writeDir(logDir)
     end
 end
 
 function LogHelpers.buildEntry(entry: ProjectCreationEntry): string
-    local data = {
+    const data = {
         args = entry.args,
         config = entry.config,
         cwd = entry.cwd,
@@ -69,8 +69,8 @@ end
 
 function LogHelpers.appendEntry(entry: ProjectCreationEntry)
     LogHelpers.ensureLogDir()
-    local logPath = LogHelpers.getLogFilePath()
-    local line = LogHelpers.buildEntry(entry) .. "\n"
+    const logPath = LogHelpers.getLogFilePath()
+    const line = LogHelpers.buildEntry(entry) .. "\n"
 
     local existing = ""
     if fs.isFile(logPath) then

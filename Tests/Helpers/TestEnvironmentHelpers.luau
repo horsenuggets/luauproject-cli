@@ -8,17 +8,17 @@ environment.
 
 --]]
 
-local fs = require("@lune/fs")
-local process = require("@lune/process")
+const fs = require("@lune/fs")
+const process = require("@lune/process")
 
-local TestEnvironmentHelpers = {}
+const TestEnvironmentHelpers = {}
 
-local function dedent(str: string): string
-    local content = string.match(str, "^\n(.*)$") or str
+const function dedent(str: string): string
+    const content = string.match(str, "^\n(.*)$") or str
 
     local minIndent = math.huge
     for line in string.gmatch(content, "[^\n]+") do
-        local indent = string.match(line, "^(%s*)")
+        const indent = string.match(line, "^(%s*)")
         if indent and #line > #indent then
             minIndent = math.min(minIndent, #indent)
         end
@@ -28,7 +28,7 @@ local function dedent(str: string): string
         minIndent = 0
     end
 
-    local lines = {}
+    const lines = {}
     for line in string.gmatch(content .. "\n", "([^\n]*)\n") do
         if #line > 0 then
             table.insert(lines, string.sub(line, minIndent + 1))
@@ -66,19 +66,19 @@ export type Environment = {
 }
 
 function TestEnvironmentHelpers.create(): Environment
-    local timestamp = tostring(os.time()) .. tostring(math.random(10000, 99999))
-    local tempDir = `/tmp/luauproject-cli-test-{timestamp}`
+    const timestamp = tostring(os.time()) .. tostring(math.random(10000, 99999))
+    const tempDir = `/tmp/luauproject-cli-test-{timestamp}`
     fs.writeDir(tempDir)
 
-    local projectRoot = process.cwd
-    local scriptsDir = `{projectRoot}/Scripts`
-    local buildDir = `{projectRoot}/Build`
+    const projectRoot = process.cwd
+    const scriptsDir = `{projectRoot}/Scripts`
+    const buildDir = `{projectRoot}/Build`
 
     if fs.isFile("rokit.toml") then
         fs.copy("rokit.toml", `{tempDir}/rokit.toml`)
     end
 
-    local env: Environment = {
+    const env: Environment = {
         path = tempDir,
 
         cleanup = function()
@@ -92,8 +92,8 @@ function TestEnvironmentHelpers.create(): Environment
         end,
 
         writeFile = function(relativePath: string, content: string)
-            local fullPath = `{tempDir}/{relativePath}`
-            local dir = string.match(fullPath, "(.+)/[^/]+$")
+            const fullPath = `{tempDir}/{relativePath}`
+            const dir = string.match(fullPath, "(.+)/[^/]+$")
             if dir and not fs.isDir(dir) then
                 fs.writeDir(dir)
             end
@@ -117,8 +117,8 @@ function TestEnvironmentHelpers.create(): Environment
         end,
 
         runScript = function(scriptName: string, args: { string }?): ExecResult
-            local scriptPath = `{scriptsDir}/{scriptName}.exec.luau`
-            local luneArgs = { "run", scriptPath }
+            const scriptPath = `{scriptsDir}/{scriptName}.exec.luau`
+            const luneArgs = { "run", scriptPath }
             if args then
                 for _, arg in args do
                     table.insert(luneArgs, arg)
@@ -128,8 +128,8 @@ function TestEnvironmentHelpers.create(): Environment
         end,
 
         runCli = function(args: { string }?): ExecResult
-            local cliBinary = `{buildDir}/luauproject`
-            local cliArgs = args or {}
+            const cliBinary = `{buildDir}/luauproject`
+            const cliArgs = args or {}
             return process.exec(cliBinary, cliArgs, { cwd = tempDir })
         end,
 

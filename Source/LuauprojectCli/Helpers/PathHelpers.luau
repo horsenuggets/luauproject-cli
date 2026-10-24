@@ -7,12 +7,12 @@ across platforms and removes duplicate slashes.
 
 --]]
 
-local process = require("@lune/process")
+const process = require("@lune/process")
 
-local IS_WINDOWS = process.os == "windows"
-local NATIVE_SEP = if IS_WINDOWS then "\\" else "/"
+const IS_WINDOWS = process.os == "windows"
+const NATIVE_SEP = if IS_WINDOWS then "\\" else "/"
 
-local PathHelpers = {}
+const PathHelpers = {}
 
 --[[
     Normalizes a path to use the native separator for the current OS and removes duplicate
@@ -51,10 +51,10 @@ end
     Example: PathHelpers.join("home", "user", ".config") -> "home/user/.config" (Unix)
 ]]
 function PathHelpers.join(...: string): string
-    local parts = { ... }
+    const parts = { ... }
     assert(#parts > 0, "at least one path segment is required")
 
-    local result = table.concat(parts, NATIVE_SEP)
+    const result = table.concat(parts, NATIVE_SEP)
     return PathHelpers.normalize(result)
 end
 
@@ -78,7 +78,7 @@ function PathHelpers.tildify(path: string): string
     end
 
     -- Only substitute a whole home directory, not a sibling like "/home/user-backup"
-    local nextChar = string.sub(path, #home + 1, #home + 1)
+    const nextChar = string.sub(path, #home + 1, #home + 1)
     if string.sub(path, 1, #home) == home and (nextChar == "" or nextChar == "/" or nextChar == "\\") then
         return "~" .. string.sub(path, #home + 1)
     end
@@ -95,7 +95,7 @@ end
 function PathHelpers.trimTrailingSeparators(path: string): string
     assert(type(path) == "string", "path must be a string")
 
-    local trimmed = string.gsub(path, "[/\\]+$", "")
+    const trimmed = string.gsub(path, "[/\\]+$", "")
     if trimmed == path then
         return path
     end
@@ -125,7 +125,7 @@ end
     Example: "/home/user//git/project" -> "~/git/project/"
 ]]
 function PathHelpers.formatDirectory(path: string): string
-    local formatted = PathHelpers.formatFile(path)
+    const formatted = PathHelpers.formatFile(path)
     if IS_WINDOWS and string.match(formatted, "^%a:$") then
         return formatted .. "." .. NATIVE_SEP
     end

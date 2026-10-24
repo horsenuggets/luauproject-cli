@@ -14,10 +14,10 @@ locally or in a Docker container for full isolation.
 
 --]]
 
-local Testable = require("@devpackages/Testable")
-local process = require("@lune/process")
+const Testable = require("@devpackages/Testable")
+const process = require("@lune/process")
 
-local UNIT_TESTS = {
+const UNIT_TESTS = {
     { Name = "BuildTest", Func = require("@tests/BuildTest.spec") },
     { Name = "DockerEnvironmentHelpersTest", Func = require("@tests/DockerEnvironmentHelpersTest.spec") },
     { Name = "HelpersTest", Func = require("@tests/HelpersTest.spec") },
@@ -28,12 +28,12 @@ local UNIT_TESTS = {
     { Name = "TestEnvironmentTest", Func = require("@tests/TestEnvironmentTest.spec") },
 }
 
-local DOCKER_TESTS = {
+const DOCKER_TESTS = {
     { Name = "NewCommandTest", Func = require("@tests/NewCommandTest.spec") },
 }
 
-local function parseArgs(): { noDocker: boolean, dockerOnly: boolean }
-    local args = process.args
+const function parseArgs(): { noDocker: boolean, dockerOnly: boolean }
+    const args = process.args
     local noDocker = false
     local dockerOnly = false
 
@@ -51,8 +51,8 @@ end
 const RunTests = {}
 
 function RunTests.exec()
-    local options = parseArgs()
-    local tests = {}
+    const options = parseArgs()
+    const tests = {}
 
     if not options.dockerOnly then
         for _, test in UNIT_TESTS do
@@ -72,7 +72,7 @@ function RunTests.exec()
     end
 
     Testable.configure({ PrintSkipped = true })
-    local _, passed = Testable.run(tests)
+    const _, passed = Testable.run(tests)
     process.exit(if passed then 0 else 1)
 end
 

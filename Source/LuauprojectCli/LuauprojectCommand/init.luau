@@ -6,11 +6,11 @@ The root command for the luauproject CLI. Registers all subcommands.
 
 --]]
 
-local Commandline = require("@packages/Commandline")
-local NewCommand = require("@self/NewCommand")
-local __VERSION__ = require("@self/__VERSION__")
+const Commandline = require("@packages/Commandline")
+const NewCommand = require("@self/NewCommand")
+const __VERSION__ = require("@self/__VERSION__")
 
-local INSTALL_OPTIONS = {
+const INSTALL_OPTIONS = {
     Name = "luauproject",
     InstallDir = ".luauproject-cli",
     Version = __VERSION__,
