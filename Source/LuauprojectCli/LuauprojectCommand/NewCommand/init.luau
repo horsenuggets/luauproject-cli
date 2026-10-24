@@ -7,6 +7,7 @@ prompts and command-line flags.
 
 --]]
 
+const AliasHelpers = require("@luauprojectcli/Helpers/AliasHelpers")
 const Chalk = require("@packages/Chalk")
 const Command = require("@packages/Commandline").Command
 const Flag = require("@packages/Commandline").Flag
@@ -28,14 +29,6 @@ const stdio = require("@lune/stdio")
 ------------------------------------------------------------------------------------------
 
 const TEMPLATE_REPO = "horsenuggets/luau-package-template"
-
--- These alias names are reserved in .luaurc and cannot be used as project names
-const RESERVED_ALIASES = {
-    "devpackages",
-    "lune",
-    "packages",
-    "tests",
-}
 
 ------------------------------------------------------------------------------------------
 -- Types
@@ -63,19 +56,6 @@ type SetupResults = {
 ------------------------------------------------------------------------------------------
 -- Utility Functions
 ------------------------------------------------------------------------------------------
-
-const function toAliasName(kebabName: string): string
-    return kebabName:gsub("-", "")
-end
-
-const function isReservedAlias(aliasName: string): boolean
-    for _, reserved in RESERVED_ALIASES do
-        if aliasName == reserved then
-            return true
-        end
-    end
-    return false
-end
 
 const function replaceInFile(filePath: string, replacements: { { string } })
     if not fs.isFile(filePath) then
@@ -136,8 +116,8 @@ const function getProjectName(flags: any): string
             stdio.ewrite(Chalk.red("Project name is empty after correction.\n"))
             process.exit(1)
         end
-        const aliasName = toAliasName(corrected)
-        if isReservedAlias(aliasName) then
+        const aliasName = AliasHelpers.toAliasName(corrected)
+        if AliasHelpers.isReservedAlias(aliasName) then
             stdio.ewrite(Chalk.red(`Project name "{corrected}" conflicts with reserved alias "{aliasName}".\n`))
             process.exit(1)
         end
@@ -160,8 +140,8 @@ const function getProjectName(flags: any): string
             continue
         end
 
-        const aliasName = toAliasName(corrected)
-        if isReservedAlias(aliasName) then
+        const aliasName = AliasHelpers.toAliasName(corrected)
+        if AliasHelpers.isReservedAlias(aliasName) then
             print(
                 Chalk.yellow(
                     `Project name "{corrected}" conflicts with reserved alias "{aliasName}". Please try again.`
@@ -425,7 +405,7 @@ const function updateLuaurc(config: ProjectConfig)
     -- Update aliases: remove template alias and add project alias
     const aliases = luaurc.aliases or {}
     aliases.luaupackagetemplate = nil
-    const aliasName = toAliasName(config.Name)
+    const aliasName = AliasHelpers.toAliasName(config.Name)
     aliases[aliasName] = `./Source/{config.PascalName}/`
 
     -- Get sorted alias keys

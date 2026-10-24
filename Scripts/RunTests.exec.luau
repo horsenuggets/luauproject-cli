@@ -18,6 +18,7 @@ const Testable = require("@devpackages/Testable")
 const process = require("@lune/process")
 
 const UNIT_TESTS = {
+    { Name = "AliasHelpersTest", Func = require("@tests/AliasHelpersTest.spec") },
     { Name = "BuildTest", Func = require("@tests/BuildTest.spec") },
     { Name = "DockerEnvironmentHelpersTest", Func = require("@tests/DockerEnvironmentHelpersTest.spec") },
     { Name = "HelpersTest", Func = require("@tests/HelpersTest.spec") },
