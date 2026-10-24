@@ -6,7 +6,7 @@ Tests for shell helper module including command execution and availability check
 
 --]]
 
-local ShellHelpers = require("@luauprojectcli/Helpers/ShellHelpers")
+const ShellHelpers = require("@luauprojectcli/Helpers/ShellHelpers")
 
 return function()
     describe("ShellHelpers.isCommandAvailable", function()
@@ -22,13 +22,13 @@ return function()
 
     describe("ShellHelpers.run", function()
         it("should return ok=true for successful commands", function()
-            local ok, output = ShellHelpers.run("echo", { "hello" })
+            const ok, output = ShellHelpers.run("echo", { "hello" })
             expect(ok).to.equal(true)
             expect(output:match("hello")).to.be.ok()
         end)
 
         it("should return ok=false for failed commands", function()
-            local ok, _ = ShellHelpers.run("ls", { "/nonexistent-path-12345" })
+            const ok, _ = ShellHelpers.run("ls", { "/nonexistent-path-12345" })
             expect(ok).to.equal(false)
         end)
     end)

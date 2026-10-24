@@ -6,7 +6,7 @@
 # the standalone executable (on PATH as luauproject) and the CLI source (for lune run).
 #
 # The build context is the repo root, and Build/Docker/luauproject must be built first
-# with ./Scripts/BuildExecutable.luau linux-x86_64 Build/Docker. The Docker test helpers
+# with ./Scripts/BuildExecutable.exec.luau linux-x86_64 Build/Docker. The Docker test helpers
 # do both automatically.
 #
 

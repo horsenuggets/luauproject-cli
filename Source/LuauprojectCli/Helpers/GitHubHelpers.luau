@@ -6,17 +6,17 @@ Helper functions for interacting with the GitHub CLI.
 
 --]]
 
-local Chalk = require("@packages/Chalk")
-local PromptHelpers = require("@self/PromptHelpers")
-local ShellHelpers = require("@self/ShellHelpers")
-local process = require("@lune/process")
+const Chalk = require("@packages/Chalk")
+const PromptHelpers = require("@self/PromptHelpers")
+const ShellHelpers = require("@self/ShellHelpers")
+const process = require("@lune/process")
 
-local GitHubHelpers = {}
+const GitHubHelpers = {}
 
 function GitHubHelpers.getUsername(): string?
-    local result = process.exec("gh", { "api", "user", "--jq", ".login" })
+    const result = process.exec("gh", { "api", "user", "--jq", ".login" })
     if result.ok then
-        local username = result.stdout:gsub("%s+$", "")
+        const username = result.stdout:gsub("%s+$", "")
         if username ~= "" then
             return username
         end
@@ -25,11 +25,11 @@ function GitHubHelpers.getUsername(): string?
 end
 
 function GitHubHelpers.getOrganizations(): { string }
-    local result = process.exec("gh", { "api", "user/orgs", "--jq", ".[].login" })
+    const result = process.exec("gh", { "api", "user/orgs", "--jq", ".[].login" })
     if result.ok then
-        local orgs = {}
+        const orgs = {}
         for org in result.stdout:gmatch("[^\n]+") do
-            local trimmed = org:gsub("%s+$", "")
+            const trimmed = org:gsub("%s+$", "")
             if trimmed ~= "" then
                 table.insert(orgs, trimmed)
             end
@@ -40,14 +40,14 @@ function GitHubHelpers.getOrganizations(): { string }
 end
 
 function GitHubHelpers.getAvailableOwners(): { string }
-    local owners = {}
+    const owners = {}
 
-    local username = GitHubHelpers.getUsername()
+    const username = GitHubHelpers.getUsername()
     if username then
         table.insert(owners, username)
     end
 
-    local orgs = GitHubHelpers.getOrganizations()
+    const orgs = GitHubHelpers.getOrganizations()
     for _, org in ipairs(orgs) do
         table.insert(owners, org)
     end
@@ -58,20 +58,20 @@ end
 function GitHubHelpers.installCli(): boolean
     print("Installing GitHub CLI...")
 
-    local os = process.os
+    const os = process.os
     if os == "macos" then
-        local result = process.exec("brew", { "install", "gh" })
+        const result = process.exec("brew", { "install", "gh" })
         return result.ok
     elseif os == "linux" then
-        local hasApt = ShellHelpers.isCommandAvailable("apt-get")
+        const hasApt = ShellHelpers.isCommandAvailable("apt-get")
         if hasApt then
-            local result = process.exec("sudo", { "apt-get", "install", "-y", "gh" })
+            const result = process.exec("sudo", { "apt-get", "install", "-y", "gh" })
             return result.ok
         end
 
-        local hasDnf = ShellHelpers.isCommandAvailable("dnf")
+        const hasDnf = ShellHelpers.isCommandAvailable("dnf")
         if hasDnf then
-            local result = process.exec("sudo", { "dnf", "install", "-y", "gh" })
+            const result = process.exec("sudo", { "dnf", "install", "-y", "gh" })
             return result.ok
         end
 
@@ -79,15 +79,15 @@ function GitHubHelpers.installCli(): boolean
         print(Chalk.dim("Visit https://cli.github.com for installation instructions."))
         return false
     elseif os == "windows" then
-        local hasWinget = ShellHelpers.isCommandAvailable("winget")
+        const hasWinget = ShellHelpers.isCommandAvailable("winget")
         if hasWinget then
-            local result = process.exec("winget", { "install", "--id", "GitHub.cli" })
+            const result = process.exec("winget", { "install", "--id", "GitHub.cli" })
             return result.ok
         end
 
-        local hasChoco = ShellHelpers.isCommandAvailable("choco")
+        const hasChoco = ShellHelpers.isCommandAvailable("choco")
         if hasChoco then
-            local result = process.exec("choco", { "install", "gh", "-y" })
+            const result = process.exec("choco", { "install", "gh", "-y" })
             return result.ok
         end
 
@@ -109,7 +109,7 @@ function GitHubHelpers.ensureInstalled()
     print(Chalk.yellow("GitHub CLI (gh) is not installed."))
     print()
 
-    local shouldInstall = PromptHelpers.promptConfirm("Would you like to install it automatically?", true)
+    const shouldInstall = PromptHelpers.promptConfirm("Would you like to install it automatically?", true)
     if not shouldInstall then
         print()
         print("Please install gh manually and try again.")
@@ -118,7 +118,7 @@ function GitHubHelpers.ensureInstalled()
     end
 
     print()
-    local ok = GitHubHelpers.installCli()
+    const ok = GitHubHelpers.installCli()
     if not ok then
         print()
         print(Chalk.red("Failed to install GitHub CLI."))

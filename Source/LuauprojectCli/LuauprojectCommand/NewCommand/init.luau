@@ -7,35 +7,28 @@ prompts and command-line flags.
 
 --]]
 
-local Chalk = require("@packages/Chalk")
-local Command = require("@packages/Commandline").Command
-local Flag = require("@packages/Commandline").Flag
-local GitHubHelpers = require("@luauprojectcli/Helpers/GitHubHelpers")
-local LogHelpers = require("@luauprojectcli/Helpers/LogHelpers")
-local PathHelpers = require("@luauprojectcli/Helpers/PathHelpers")
-local PromptHelpers = require("@luauprojectcli/Helpers/PromptHelpers")
-local ShellHelpers = require("@luauprojectcli/Helpers/ShellHelpers")
-local StringHelpers = require("@luauprojectcli/Helpers/StringHelpers")
-local TerraformHelpers = require("@luauprojectcli/Helpers/TerraformHelpers")
-local WallyHelpers = require("@luauprojectcli/Helpers/WallyHelpers")
-local fs = require("@lune/fs")
-local process = require("@lune/process")
-local serde = require("@lune/serde")
-local stdio = require("@lune/stdio")
+const AliasHelpers = require("@luauprojectcli/Helpers/AliasHelpers")
+const Chalk = require("@packages/Chalk")
+const Command = require("@packages/Commandline").Command
+const Flag = require("@packages/Commandline").Flag
+const GitHubHelpers = require("@luauprojectcli/Helpers/GitHubHelpers")
+const LogHelpers = require("@luauprojectcli/Helpers/LogHelpers")
+const PathHelpers = require("@luauprojectcli/Helpers/PathHelpers")
+const PromptHelpers = require("@luauprojectcli/Helpers/PromptHelpers")
+const ShellHelpers = require("@luauprojectcli/Helpers/ShellHelpers")
+const StringHelpers = require("@luauprojectcli/Helpers/StringHelpers")
+const TerraformHelpers = require("@luauprojectcli/Helpers/TerraformHelpers")
+const WallyHelpers = require("@luauprojectcli/Helpers/WallyHelpers")
+const fs = require("@lune/fs")
+const process = require("@lune/process")
+const serde = require("@lune/serde")
+const stdio = require("@lune/stdio")
 
 ------------------------------------------------------------------------------------------
 -- Constants
 ------------------------------------------------------------------------------------------
 
-local TEMPLATE_REPO = "horsenuggets/luau-package-template"
-
--- These alias names are reserved in .luaurc and cannot be used as project names
-local RESERVED_ALIASES = {
-    "devpackages",
-    "lune",
-    "packages",
-    "tests",
-}
+const TEMPLATE_REPO = "horsenuggets/luau-package-template"
 
 ------------------------------------------------------------------------------------------
 -- Types
@@ -64,20 +57,7 @@ type SetupResults = {
 -- Utility Functions
 ------------------------------------------------------------------------------------------
 
-local function toAliasName(kebabName: string): string
-    return kebabName:gsub("-", "")
-end
-
-local function isReservedAlias(aliasName: string): boolean
-    for _, reserved in RESERVED_ALIASES do
-        if aliasName == reserved then
-            return true
-        end
-    end
-    return false
-end
-
-local function replaceInFile(filePath: string, replacements: { { string } })
+const function replaceInFile(filePath: string, replacements: { { string } })
     if not fs.isFile(filePath) then
         return
     end
@@ -92,22 +72,22 @@ end
 -- Print Functions
 ------------------------------------------------------------------------------------------
 
-local function printHeader()
+const function printHeader()
     print("Creating a new Luau project...\n")
 end
 
-local function printCreatingProject(name: string, projectPath: string)
+const function printCreatingProject(name: string, projectPath: string)
     print()
     print(
         `Creating project {Chalk.bold(Chalk.blueBright(name))} at {Chalk.dim(PathHelpers.formatDirectory(projectPath))}...`
     )
 end
 
-local function printStep(message: string)
+const function printStep(message: string)
     print(message)
 end
 
-local function printSuccess(config: ProjectConfig)
+const function printSuccess(config: ProjectConfig)
     print()
     print(Chalk.bold(Chalk.greenBright("Project created successfully!")))
     print()
@@ -118,7 +98,7 @@ local function printSuccess(config: ProjectConfig)
     end
 end
 
-local function printWallyTokenWarning(owner: string, name: string)
+const function printWallyTokenWarning(owner: string, name: string)
     print()
     print(Chalk.yellow("WALLY_AUTH not found in environment."))
     print(Chalk.dim("To enable Wally publishing, add the secret manually:"))
@@ -129,15 +109,15 @@ end
 -- Input Gathering Functions
 ------------------------------------------------------------------------------------------
 
-local function getProjectName(flags: any): string
+const function getProjectName(flags: any): string
     if flags.name.Value and flags.name.Value ~= "" then
-        local corrected = StringHelpers.toKebabCase(flags.name.Value)
+        const corrected = StringHelpers.toKebabCase(flags.name.Value)
         if corrected == "" then
             stdio.ewrite(Chalk.red("Project name is empty after correction.\n"))
             process.exit(1)
         end
-        local aliasName = toAliasName(corrected)
-        if isReservedAlias(aliasName) then
+        const aliasName = AliasHelpers.toAliasName(corrected)
+        if AliasHelpers.isReservedAlias(aliasName) then
             stdio.ewrite(Chalk.red(`Project name "{corrected}" conflicts with reserved alias "{aliasName}".\n`))
             process.exit(1)
         end
@@ -148,20 +128,20 @@ local function getProjectName(flags: any): string
     end
 
     while true do
-        local input = PromptHelpers.prompt("Project name (kebab-case)")
+        const input = PromptHelpers.prompt("Project name (kebab-case)")
         if input == "" then
             stdio.ewrite(Chalk.red("Project name is required.\n"))
             continue
         end
 
-        local corrected = StringHelpers.toKebabCase(input)
+        const corrected = StringHelpers.toKebabCase(input)
         if corrected == "" then
             print(Chalk.yellow("Project name is empty after correction. Please try again."))
             continue
         end
 
-        local aliasName = toAliasName(corrected)
-        if isReservedAlias(aliasName) then
+        const aliasName = AliasHelpers.toAliasName(corrected)
+        if AliasHelpers.isReservedAlias(aliasName) then
             print(
                 Chalk.yellow(
                     `Project name "{corrected}" conflicts with reserved alias "{aliasName}". Please try again.`
@@ -178,19 +158,19 @@ local function getProjectName(flags: any): string
     end
 end
 
-local function getDescription(flags: any): string
+const function getDescription(flags: any): string
     if flags.description.Value and flags.description.Value ~= "" then
         return flags.description.Value
     end
     return PromptHelpers.prompt("Description", "A Luau project.")
 end
 
-local function getOwner(flags: any): string
+const function getOwner(flags: any): string
     if flags.owner.Value and flags.owner.Value ~= "" then
         return flags.owner.Value
     end
 
-    local owners = GitHubHelpers.getAvailableOwners()
+    const owners = GitHubHelpers.getAvailableOwners()
 
     if #owners == 1 then
         return PromptHelpers.prompt("GitHub owner or organization", owners[1])
@@ -198,12 +178,12 @@ local function getOwner(flags: any): string
 
     while true do
         if #owners == 0 then
-            local result = PromptHelpers.prompt("GitHub owner or organization")
+            const result = PromptHelpers.prompt("GitHub owner or organization")
             if result ~= "" then
                 return result
             end
         else
-            local index = stdio.prompt("select", "GitHub owner or organization", owners)
+            const index = stdio.prompt("select", "GitHub owner or organization", owners)
             if index then
                 return owners[index]
             end
@@ -213,7 +193,7 @@ local function getOwner(flags: any): string
     end
 end
 
-local function shouldCreateGithubRepo(flags: any): boolean
+const function shouldCreateGithubRepo(flags: any): boolean
     if flags.nogithub.Value then
         return false
     end
@@ -223,7 +203,7 @@ local function shouldCreateGithubRepo(flags: any): boolean
     return PromptHelpers.promptConfirm("Create GitHub repository?", true)
 end
 
-local function shouldBePrivate(flags: any, createGithubRepo: boolean): boolean
+const function shouldBePrivate(flags: any, createGithubRepo: boolean): boolean
     if not createGithubRepo then
         return false
     end
@@ -236,7 +216,7 @@ local function shouldBePrivate(flags: any, createGithubRepo: boolean): boolean
     return PromptHelpers.promptConfirm("Private repository?", false)
 end
 
-local function shouldBePrivatePackage(flags: any): boolean
+const function shouldBePrivatePackage(flags: any): boolean
     if flags.privatepackage.Value then
         return true
     end
@@ -244,18 +224,18 @@ local function shouldBePrivatePackage(flags: any): boolean
 end
 
 -- Prints an error and returns false if the project path cannot be used
-local function validateProjectPath(projectPath: string): boolean
+const function validateProjectPath(projectPath: string): boolean
     if fs.isDir(projectPath) then
-        local entries = fs.readDir(projectPath)
+        const entries = fs.readDir(projectPath)
         if #entries > 0 then
-            local displayPath = Chalk.dim(PathHelpers.formatDirectory(projectPath))
+            const displayPath = Chalk.dim(PathHelpers.formatDirectory(projectPath))
             stdio.ewrite(`{Chalk.red("Directory")} {displayPath} {Chalk.red("already exists and is not empty.")}\n`)
             return false
         end
     end
 
     if fs.isFile(projectPath) then
-        local displayPath = Chalk.dim(PathHelpers.formatFile(projectPath))
+        const displayPath = Chalk.dim(PathHelpers.formatFile(projectPath))
         stdio.ewrite(`{Chalk.red("A file already exists at")} {displayPath}{Chalk.red(".")}\n`)
         return false
     end
@@ -263,14 +243,14 @@ local function validateProjectPath(projectPath: string): boolean
     return true
 end
 
-local function getProjectPath(flags: any, name: string): string
+const function getProjectPath(flags: any, name: string): string
     -- LUAUPROJECT_CWD is set by the wrapper script when running from a different
     -- directory
-    local basePath = process.env.LUAUPROJECT_CWD or process.cwd
-    local defaultPath = PathHelpers.trimTrailingSeparators(PathHelpers.join(basePath, name))
+    const basePath = process.env.LUAUPROJECT_CWD or process.cwd
+    const defaultPath = PathHelpers.trimTrailingSeparators(PathHelpers.join(basePath, name))
 
     if flags.path.Value and flags.path.Value ~= "" then
-        local projectPath = PathHelpers.trimTrailingSeparators(PathHelpers.normalize(flags.path.Value))
+        const projectPath = PathHelpers.trimTrailingSeparators(PathHelpers.normalize(flags.path.Value))
         if not validateProjectPath(projectPath) then
             process.exit(1)
         end
@@ -284,7 +264,7 @@ local function getProjectPath(flags: any, name: string): string
 
     -- Expand ~ back to the home directory
     if string.sub(projectPath, 1, 1) == "~" then
-        local home = process.env.HOME or ""
+        const home = process.env.HOME or ""
         projectPath = home .. string.sub(projectPath, 2)
     end
 
@@ -296,14 +276,14 @@ local function getProjectPath(flags: any, name: string): string
     return projectPath
 end
 
-local function gatherProjectConfig(flags: any): ProjectConfig
-    local name = getProjectName(flags)
-    local description = getDescription(flags)
-    local owner = getOwner(flags)
-    local createGithubRepo = shouldCreateGithubRepo(flags)
-    local isPrivate = shouldBePrivate(flags, createGithubRepo)
-    local isPrivatePackage = shouldBePrivatePackage(flags)
-    local projectPath = getProjectPath(flags, name)
+const function gatherProjectConfig(flags: any): ProjectConfig
+    const name = getProjectName(flags)
+    const description = getDescription(flags)
+    const owner = getOwner(flags)
+    const createGithubRepo = shouldCreateGithubRepo(flags)
+    const isPrivate = shouldBePrivate(flags, createGithubRepo)
+    const isPrivatePackage = shouldBePrivatePackage(flags)
+    const projectPath = getProjectPath(flags, name)
 
     return {
         Name = name,
@@ -321,19 +301,19 @@ end
 -- Project Setup Functions
 ------------------------------------------------------------------------------------------
 
-local function cloneTemplate(projectPath: string)
+const function cloneTemplate(projectPath: string)
     printStep("Cloning template repository...")
     ShellHelpers.runOrFail("gh", { "repo", "clone", TEMPLATE_REPO, projectPath, "--", "--depth=1" })
     fs.removeDir(`{projectPath}/.git`)
 end
 
-local function initializeGitRepo(projectPath: string)
+const function initializeGitRepo(projectPath: string)
     printStep("Initializing Git repository...")
     ShellHelpers.runOrFail("git", { "init" }, projectPath)
 end
 
-local function updateWallyToml(config: ProjectConfig)
-    local wallyPath = `{config.ProjectPath}/wally.toml`
+const function updateWallyToml(config: ProjectConfig)
+    const wallyPath = `{config.ProjectPath}/wally.toml`
     if not fs.isFile(wallyPath) then
         return
     end
@@ -353,7 +333,7 @@ local function updateWallyToml(config: ProjectConfig)
     fs.writeFile(wallyPath, content)
 end
 
-local function updateProjectJson(config: ProjectConfig)
+const function updateProjectJson(config: ProjectConfig)
     -- default.project.json: update name and source path
     replaceInFile(`{config.ProjectPath}/default.project.json`, {
         { '"luau%-package%-template"', `"{config.Name}"` },
@@ -366,28 +346,28 @@ local function updateProjectJson(config: ProjectConfig)
     })
 end
 
-local function updateRootInit(config: ProjectConfig)
+const function updateRootInit(config: ProjectConfig)
     replaceInFile(`{config.ProjectPath}/init.luau`, {
         { "LuauPackageTemplate", config.PascalName },
     })
 end
 
-local function updateReadme(config: ProjectConfig)
+const function updateReadme(config: ProjectConfig)
     replaceInFile(`{config.ProjectPath}/README.md`, {
         { "# luau%-package%-template", `# {config.Name}` },
         { "A template for creating Luau packages%.", config.Description },
     })
 end
 
-local function updateLicense(config: ProjectConfig)
+const function updateLicense(config: ProjectConfig)
     replaceInFile(`{config.ProjectPath}/LICENSE`, {
         { "HorseNuggets", config.Owner },
     })
 end
 
-local function renameSourceDirectory(config: ProjectConfig)
-    local oldPath = `{config.ProjectPath}/Source/LuauPackageTemplate`
-    local newPath = `{config.ProjectPath}/Source/{config.PascalName}`
+const function renameSourceDirectory(config: ProjectConfig)
+    const oldPath = `{config.ProjectPath}/Source/LuauPackageTemplate`
+    const newPath = `{config.ProjectPath}/Source/{config.PascalName}`
 
     if not fs.isDir(oldPath) then
         return
@@ -399,54 +379,54 @@ local function renameSourceDirectory(config: ProjectConfig)
     fs.move(oldPath, newPath)
 end
 
-local function renameWorkspaceFile(config: ProjectConfig)
-    local oldPath = `{config.ProjectPath}/luau-package-template.code-workspace`
-    local newPath = `{config.ProjectPath}/{config.Name}.code-workspace`
+const function renameWorkspaceFile(config: ProjectConfig)
+    const oldPath = `{config.ProjectPath}/luau-package-template.code-workspace`
+    const newPath = `{config.ProjectPath}/{config.Name}.code-workspace`
 
     if fs.isFile(oldPath) then
         fs.move(oldPath, newPath)
     end
 end
 
-local function createVersionFiles(config: ProjectConfig)
+const function createVersionFiles(config: ProjectConfig)
     fs.writeFile(`{config.ProjectPath}/VERSION`, "0.0.0\n")
     fs.writeFile(`{config.ProjectPath}/CHANGELOG.md`, "# Changelog\n\n## 0.0.1\n- Initial release\n")
 end
 
-local function updateLuaurc(config: ProjectConfig)
-    local luaurcPath = `{config.ProjectPath}/.luaurc`
+const function updateLuaurc(config: ProjectConfig)
+    const luaurcPath = `{config.ProjectPath}/.luaurc`
     if not fs.isFile(luaurcPath) then
         return
     end
 
-    local content = fs.readFile(luaurcPath)
-    local luaurc = serde.decode("json", content)
+    const content = fs.readFile(luaurcPath)
+    const luaurc = serde.decode("json", content)
 
     -- Update aliases: remove template alias and add project alias
-    local aliases = luaurc.aliases or {}
+    const aliases = luaurc.aliases or {}
     aliases.luaupackagetemplate = nil
-    local aliasName = toAliasName(config.Name)
+    const aliasName = AliasHelpers.toAliasName(config.Name)
     aliases[aliasName] = `./Source/{config.PascalName}/`
 
     -- Get sorted alias keys
-    local aliasKeys = {}
+    const aliasKeys = {}
     for key in aliases do
         table.insert(aliasKeys, key)
     end
     table.sort(aliasKeys)
 
     -- Get sorted global keys
-    local globals = luaurc.globals or {}
+    const globals = luaurc.globals or {}
     table.sort(globals)
 
     -- Build JSON manually with 4-space indentation and sorted keys
-    local lines = {
+    const lines = {
         "{",
         '    "aliases": {',
     }
 
     for i, key in aliasKeys do
-        local comma = if i < #aliasKeys then "," else ""
+        const comma = if i < #aliasKeys then "," else ""
         table.insert(lines, `        "{key}": "{aliases[key]}"{comma}`)
     end
 
@@ -454,7 +434,7 @@ local function updateLuaurc(config: ProjectConfig)
     table.insert(lines, '    "globals": [')
 
     for i, global in globals do
-        local comma = if i < #globals then "," else ""
+        const comma = if i < #globals then "," else ""
         table.insert(lines, `        "{global}"{comma}`)
     end
 
@@ -464,7 +444,7 @@ local function updateLuaurc(config: ProjectConfig)
     fs.writeFile(luaurcPath, table.concat(lines, "\n") .. "\n")
 end
 
-local function updateConfigFiles(config: ProjectConfig)
+const function updateConfigFiles(config: ProjectConfig)
     printStep("Updating project configuration files...")
     updateLuaurc(config)
     updateWallyToml(config)
@@ -477,21 +457,21 @@ local function updateConfigFiles(config: ProjectConfig)
     createVersionFiles(config)
 end
 
-local function removeEmptySubmodules(config: ProjectConfig)
-    local submodulesPath = `{config.ProjectPath}/Submodules`
+const function removeEmptySubmodules(config: ProjectConfig)
+    const submodulesPath = `{config.ProjectPath}/Submodules`
     if fs.isDir(submodulesPath) then
         fs.removeDir(submodulesPath)
     end
 end
 
-local function parseGitmodules(projectPath: string): { { path: string, url: string } }
-    local gitmodulesPath = `{projectPath}/.gitmodules`
+const function parseGitmodules(projectPath: string): { { path: string, url: string } }
+    const gitmodulesPath = `{projectPath}/.gitmodules`
     if not fs.isFile(gitmodulesPath) then
         return {}
     end
 
-    local content = fs.readFile(gitmodulesPath)
-    local submodules: { { path: string, url: string } } = {}
+    const content = fs.readFile(gitmodulesPath)
+    const submodules: { { path: string, url: string } } = {}
     local current: { path: string?, url: string? } = {}
 
     for line in content:gmatch("[^\n]+") do
@@ -505,7 +485,7 @@ local function parseGitmodules(projectPath: string): { { path: string, url: stri
             current = {}
         end
 
-        local path = line:match("^%s*path%s*=%s*(.+)%s*$")
+        const path = line:match("^%s*path%s*=%s*(.+)%s*$")
         if path then
             current.path = path
         end
@@ -513,7 +493,7 @@ local function parseGitmodules(projectPath: string): { { path: string, url: stri
         local url = line:match("^%s*url%s*=%s*(.+)%s*$")
         if url then
             -- Convert SSH URLs to HTTPS
-            local sshMatch = url:match("^git@github%.com:(.+)$")
+            const sshMatch = url:match("^git@github%.com:(.+)$")
             if sshMatch then
                 url = `https://github.com/{sshMatch}`
             end
@@ -531,15 +511,15 @@ local function parseGitmodules(projectPath: string): { { path: string, url: stri
     return submodules
 end
 
-local function setupSubmodules(config: ProjectConfig)
+const function setupSubmodules(config: ProjectConfig)
     printStep("Setting up Git submodules...")
 
-    local submodules = parseGitmodules(config.ProjectPath)
+    const submodules = parseGitmodules(config.ProjectPath)
     removeEmptySubmodules(config)
 
     -- Also remove the .gitmodules file from the template since
     -- Git submodule add will recreate it
-    local gitmodulesPath = `{config.ProjectPath}/.gitmodules`
+    const gitmodulesPath = `{config.ProjectPath}/.gitmodules`
     if fs.isFile(gitmodulesPath) then
         fs.removeFile(gitmodulesPath)
     end
@@ -557,15 +537,15 @@ end
 -- Removes a YAML job block from workflow content. Finds the
 -- job key matching the pattern at the given indent level and
 -- removes everything until the next job key at the same level.
-local function removeYamlJobBlock(content: string, jobKeyPattern: string): string
-    local lines = {}
+const function removeYamlJobBlock(content: string, jobKeyPattern: string): string
+    const lines = {}
     local removing = false
     local jobIndent = 0
 
     for line in (content .. "\n"):gmatch("(.-)\n") do
         if not removing then
             -- Check if this line starts the job block to remove
-            local indent = #(line:match("^( *)") or "")
+            const indent = #(line:match("^( *)") or "")
             if line:match(jobKeyPattern) then
                 removing = true
                 jobIndent = indent
@@ -575,8 +555,8 @@ local function removeYamlJobBlock(content: string, jobKeyPattern: string): strin
         else
             -- Check if we've reached the next job at the same
             -- indent level (or a non-indented line)
-            local indent = #(line:match("^( *)") or "")
-            local isBlank = line:match("^%s*$")
+            const indent = #(line:match("^( *)") or "")
+            const isBlank = line:match("^%s*$")
             if not isBlank and indent <= jobIndent and line:match("^%s+%S") then
                 removing = false
                 table.insert(lines, line)
@@ -592,8 +572,8 @@ end
 -- Removes a YAML step block from workflow content. Finds the
 -- step with the matching name and removes it through to the
 -- next step or end of steps.
-local function removeYamlStepBlock(content: string, stepNamePattern: string): string
-    local lines = {}
+const function removeYamlStepBlock(content: string, stepNamePattern: string): string
+    const lines = {}
     local removing = false
     local stepIndent = 0
 
@@ -615,8 +595,8 @@ local function removeYamlStepBlock(content: string, stepNamePattern: string): st
             end
             table.insert(lines, line)
         else
-            local indent = #(line:match("^( *)") or "")
-            local isBlank = line:match("^%s*$")
+            const indent = #(line:match("^( *)") or "")
+            const isBlank = line:match("^%s*$")
             -- A new step starts with "- name:" at the same or
             -- lesser indent
             if not isBlank and indent <= stepIndent and line:match("^%s+%- name:") then
@@ -632,7 +612,7 @@ local function removeYamlStepBlock(content: string, stepNamePattern: string): st
     return table.concat(lines, "\n") .. "\n"
 end
 
-local function stripWallyFromReleaseChecks(workflowPath: string)
+const function stripWallyFromReleaseChecks(workflowPath: string)
     if not fs.isFile(workflowPath) then
         return
     end
@@ -641,7 +621,7 @@ local function stripWallyFromReleaseChecks(workflowPath: string)
     fs.writeFile(workflowPath, content)
 end
 
-local function stripWallyFromPublish(workflowPath: string)
+const function stripWallyFromPublish(workflowPath: string)
     if not fs.isFile(workflowPath) then
         return
     end
@@ -650,11 +630,11 @@ local function stripWallyFromPublish(workflowPath: string)
     fs.writeFile(workflowPath, content)
 end
 
-local function copyWorkflows(config: ProjectConfig)
+const function copyWorkflows(config: ProjectConfig)
     printStep("Setting up CI workflows...")
 
-    local workflowsSourceDir = `{config.ProjectPath}/Submodules/luau-cicd/Templates/workflows`
-    local workflowsTargetDir = `{config.ProjectPath}/.github/workflows`
+    const workflowsSourceDir = `{config.ProjectPath}/Submodules/luau-cicd/Templates/workflows`
+    const workflowsTargetDir = `{config.ProjectPath}/.github/workflows`
 
     -- Create workflows directory if it doesn't exist
     if not fs.isDir(workflowsTargetDir) then
@@ -664,8 +644,8 @@ local function copyWorkflows(config: ProjectConfig)
     -- Copy all workflow files
     if fs.isDir(workflowsSourceDir) then
         for _, entry in fs.readDir(workflowsSourceDir) do
-            local sourcePath = `{workflowsSourceDir}/{entry}`
-            local targetPath = `{workflowsTargetDir}/{entry}`
+            const sourcePath = `{workflowsSourceDir}/{entry}`
+            const targetPath = `{workflowsTargetDir}/{entry}`
             if fs.isFile(sourcePath) then
                 fs.copy(sourcePath, targetPath)
             end
@@ -679,7 +659,7 @@ local function copyWorkflows(config: ProjectConfig)
     end
 end
 
-local function installTools(config: ProjectConfig)
+const function installTools(config: ProjectConfig)
     if process.env.LUAUPROJECT_SKIP_INSTALL then
         printStep("Skipping Rokit tools installation (LUAUPROJECT_SKIP_INSTALL set)...")
         return
@@ -688,7 +668,7 @@ local function installTools(config: ProjectConfig)
     ShellHelpers.runOrFail("rokit", { "install" }, config.ProjectPath)
 end
 
-local function installDependencies(config: ProjectConfig)
+const function installDependencies(config: ProjectConfig)
     if process.env.LUAUPROJECT_SKIP_INSTALL then
         printStep("Skipping Wally dependencies installation (LUAUPROJECT_SKIP_INSTALL set)...")
         return
@@ -697,7 +677,7 @@ local function installDependencies(config: ProjectConfig)
     ShellHelpers.runOrFail("wally", { "install" }, config.ProjectPath)
 end
 
-local function createInitialCommit(config: ProjectConfig)
+const function createInitialCommit(config: ProjectConfig)
     printStep("Creating initial commit...")
     ShellHelpers.runOrFail("git", { "add", "-A" }, config.ProjectPath)
     ShellHelpers.runOrFail("git", { "commit", "-m", "Initial commit from luauproject-cli" }, config.ProjectPath)
@@ -707,10 +687,10 @@ end
 -- GitHub Setup Functions
 ------------------------------------------------------------------------------------------
 
-local function createGithubRepository(config: ProjectConfig)
+const function createGithubRepository(config: ProjectConfig)
     printStep("Creating GitHub repository...")
 
-    local visibility = if config.IsPrivate then "--private" else "--public"
+    const visibility = if config.IsPrivate then "--private" else "--public"
     ShellHelpers.runOrFail("gh", {
         "repo",
         "create",
@@ -722,7 +702,7 @@ local function createGithubRepository(config: ProjectConfig)
     })
 end
 
-local function configureRepoSettings(config: ProjectConfig)
+const function configureRepoSettings(config: ProjectConfig)
     printStep("Configuring repository settings...")
 
     ShellHelpers.runOrFail("gh", {
@@ -749,21 +729,21 @@ local function configureRepoSettings(config: ProjectConfig)
     })
 end
 
-local function createDevBranch(config: ProjectConfig)
+const function createDevBranch(config: ProjectConfig)
     printStep("Creating dev branch...")
     ShellHelpers.runOrFail("git", { "checkout", "-b", "dev" }, config.ProjectPath)
     ShellHelpers.runOrFail("git", { "push", "-u", "origin", "dev" }, config.ProjectPath)
     ShellHelpers.runOrFail("git", { "checkout", "main" }, config.ProjectPath)
 end
 
-local function createReleaseBranch(config: ProjectConfig)
+const function createReleaseBranch(config: ProjectConfig)
     printStep("Creating release branch...")
     ShellHelpers.runOrFail("git", { "checkout", "-b", "release" }, config.ProjectPath)
     ShellHelpers.runOrFail("git", { "push", "-u", "origin", "release" }, config.ProjectPath)
     ShellHelpers.runOrFail("git", { "checkout", "main" }, config.ProjectPath)
 end
 
-local function getDevBranchProtectionJson(): string
+const function getDevBranchProtectionJson(): string
     return [[{
         "required_status_checks": null,
         "enforce_admins": true,
@@ -774,7 +754,7 @@ local function getDevBranchProtectionJson(): string
     }]]
 end
 
-local function getCopilotCodeReviewRulesetJson(): string
+const function getCopilotCodeReviewRulesetJson(): string
     return [[{
         "name": "Copilot Code Review",
         "target": "branch",
@@ -797,11 +777,11 @@ local function getCopilotCodeReviewRulesetJson(): string
     }]]
 end
 
-local function applyDevBranchProtection(owner: string, name: string): boolean
-    local tempFile = "/tmp/dev-protection.json"
+const function applyDevBranchProtection(owner: string, name: string): boolean
+    const tempFile = "/tmp/dev-protection.json"
     fs.writeFile(tempFile, getDevBranchProtectionJson())
 
-    local ok, _ = ShellHelpers.run("gh", {
+    const ok, _ = ShellHelpers.run("gh", {
         "api",
         `repos/{owner}/{name}/branches/dev/protection`,
         "-X",
@@ -815,18 +795,18 @@ local function applyDevBranchProtection(owner: string, name: string): boolean
     return ok
 end
 
-local function setupBranchProtection(config: ProjectConfig): (boolean, boolean)
+const function setupBranchProtection(config: ProjectConfig): (boolean, boolean)
     printStep("Setting up branch protection rules...")
 
     -- Main and release branches are managed via Terraform
-    local terraformOk = TerraformHelpers.applyBranchProtection(config.Name, config.Owner, config.IsPrivatePackage)
+    const terraformOk = TerraformHelpers.applyBranchProtection(config.Name, config.Owner, config.IsPrivatePackage)
 
     if not terraformOk then
         print(Chalk.yellow("Terraform branch protection failed. Set up manually."))
     end
 
     -- Dev branch is managed via gh API (not in Terraform module)
-    local devOk = applyDevBranchProtection(config.Owner, config.Name)
+    const devOk = applyDevBranchProtection(config.Owner, config.Name)
     if not devOk then
         print(Chalk.yellow("Failed to set dev branch protection (requires GitHub Pro for private repos)."))
     end
@@ -834,13 +814,13 @@ local function setupBranchProtection(config: ProjectConfig): (boolean, boolean)
     return terraformOk, devOk
 end
 
-local function setupCopilotCodeReview(config: ProjectConfig): boolean
+const function setupCopilotCodeReview(config: ProjectConfig): boolean
     printStep("Enabling Copilot code review for all PRs...")
 
-    local tempFile = "/tmp/copilot-ruleset.json"
+    const tempFile = "/tmp/copilot-ruleset.json"
     fs.writeFile(tempFile, getCopilotCodeReviewRulesetJson())
 
-    local ok, _ = ShellHelpers.run("gh", {
+    const ok, _ = ShellHelpers.run("gh", {
         "api",
         `repos/{config.Owner}/{config.Name}/rulesets`,
         "-X",
@@ -858,8 +838,8 @@ local function setupCopilotCodeReview(config: ProjectConfig): boolean
     return ok
 end
 
-local function setupWallyToken(config: ProjectConfig): boolean
-    local wallyToken = WallyHelpers.getAuthToken()
+const function setupWallyToken(config: ProjectConfig): boolean
+    const wallyToken = WallyHelpers.getAuthToken()
 
     if not wallyToken then
         printWallyTokenWarning(config.Owner, config.Name)
@@ -868,7 +848,7 @@ local function setupWallyToken(config: ProjectConfig): boolean
 
     printStep("Setting up Wally authentication token...")
 
-    local ok, _ = ShellHelpers.run("gh", {
+    const ok, _ = ShellHelpers.run("gh", {
         "secret",
         "set",
         "WALLY_AUTH",
@@ -887,21 +867,21 @@ local function setupWallyToken(config: ProjectConfig): boolean
     return ok
 end
 
-local function setupGithubRepository(config: ProjectConfig): SetupResults
-    local warnings: { string } = {}
+const function setupGithubRepository(config: ProjectConfig): SetupResults
+    const warnings: { string } = {}
 
     createGithubRepository(config)
     configureRepoSettings(config)
     createDevBranch(config)
     createReleaseBranch(config)
 
-    local terraformOk, devProtectionOk = setupBranchProtection(config)
-    local branchProtectionOk = terraformOk and devProtectionOk
+    const terraformOk, devProtectionOk = setupBranchProtection(config)
+    const branchProtectionOk = terraformOk and devProtectionOk
     if not branchProtectionOk then
         table.insert(warnings, "Failed to set branch protection (requires GitHub Pro for private repos)")
     end
 
-    local copilotReviewOk = setupCopilotCodeReview(config)
+    const copilotReviewOk = setupCopilotCodeReview(config)
     if not copilotReviewOk then
         table.insert(warnings, "Failed to set up Copilot code review (requires Copilot subscription)")
     end
@@ -928,7 +908,7 @@ end
 -- Main Orchestration Functions
 ------------------------------------------------------------------------------------------
 
-local function setupLocalProject(config: ProjectConfig)
+const function setupLocalProject(config: ProjectConfig)
     cloneTemplate(config.ProjectPath)
     initializeGitRepo(config.ProjectPath)
     updateConfigFiles(config)
@@ -939,7 +919,7 @@ local function setupLocalProject(config: ProjectConfig)
     createInitialCommit(config)
 end
 
-local function logProjectCreation(config: ProjectConfig, results: SetupResults?)
+const function logProjectCreation(config: ProjectConfig, results: SetupResults?)
     pcall(function()
         LogHelpers.appendEntry({
             timestamp = LogHelpers.createTimestamp(),
@@ -965,7 +945,7 @@ local function logProjectCreation(config: ProjectConfig, results: SetupResults?)
     end)
 end
 
-local function createProject(config: ProjectConfig)
+const function createProject(config: ProjectConfig)
     printCreatingProject(config.Name, config.ProjectPath)
     setupLocalProject(config)
 
@@ -1030,7 +1010,7 @@ return Command.new({
     Impl = function(_args, flags)
         GitHubHelpers.ensureInstalled()
         printHeader()
-        local config = gatherProjectConfig(flags)
+        const config = gatherProjectConfig(flags)
         if config.CreateGithubRepo then
             TerraformHelpers.ensureInstalled()
         end

@@ -6,13 +6,13 @@ Tests for path normalization and display formatting.
 
 --]]
 
-local PathHelpers = require("@luauprojectcli/Helpers/PathHelpers")
-local process = require("@lune/process")
+const PathHelpers = require("@luauprojectcli/Helpers/PathHelpers")
+const process = require("@lune/process")
 
-local IS_WINDOWS = process.os == "windows"
-local SEP = if IS_WINDOWS then "\\" else "/"
+const IS_WINDOWS = process.os == "windows"
+const SEP = if IS_WINDOWS then "\\" else "/"
 
-local function native(path: string): string
+const function native(path: string): string
     return (string.gsub(path, "/", SEP))
 end
 
@@ -37,7 +37,7 @@ return function()
         end)
 
         it("should keep the separator on a drive root only on Windows", function()
-            local expected = if IS_WINDOWS then `C:{SEP}` else "C:"
+            const expected = if IS_WINDOWS then `C:{SEP}` else "C:"
             expect(PathHelpers.trimTrailingSeparators("C:\\")).to.equal(expected)
             expect(PathHelpers.trimTrailingSeparators("C:\\\\")).to.equal(expected)
         end)
@@ -54,7 +54,7 @@ return function()
         end)
 
         it("should replace the home directory with ~", function()
-            local home = process.env.HOME
+            const home = process.env.HOME
             if not home or home == "" then
                 return
             end
@@ -62,17 +62,17 @@ return function()
         end)
 
         it("should not replace a sibling of the home directory with ~", function()
-            local home = process.env.HOME
+            const home = process.env.HOME
             if not home or home == "" then
                 return
             end
-            local sibling = PathHelpers.normalize(`{home}-backup/project`)
+            const sibling = PathHelpers.normalize(`{home}-backup/project`)
             expect(PathHelpers.formatDirectory(sibling)).to.equal(sibling .. SEP)
         end)
 
         it("should show a drive-relative path as the drive's current directory on Windows", function()
             -- On POSIX "C:" is an ordinary directory name
-            local expected = if IS_WINDOWS then `C:.{SEP}` else "C:/"
+            const expected = if IS_WINDOWS then `C:.{SEP}` else "C:/"
             expect(PathHelpers.formatDirectory("C:")).to.equal(expected)
         end)
     end)
