@@ -20,7 +20,7 @@ module "repo" {
     extra_main_checks = [
         "Test install on linux",
         "Test install on macos",
-        "Test install on windows",
+        "Test install on windows"
     ]
 
     extra_release_checks = [
@@ -32,6 +32,6 @@ module "repo" {
         "Build test macos-x86_64",
         "Build test macos-aarch64",
         "Build test windows-x86_64",
-        "Build test windows-aarch64",
+        "Build test windows-aarch64"
     ]
 }
