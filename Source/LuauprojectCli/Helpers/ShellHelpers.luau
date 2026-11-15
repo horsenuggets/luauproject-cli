@@ -6,14 +6,14 @@ Helper functions for executing shell commands.
 
 --]]
 
-local Chalk = require("@packages/Chalk")
-local process = require("@lune/process")
-local stdio = require("@lune/stdio")
+const Chalk = require("@packages/Chalk")
+const process = require("@lune/process")
+const stdio = require("@lune/stdio")
 
-local ShellHelpers = {}
+const ShellHelpers = {}
 
 function ShellHelpers.run(command: string, args: { string }?, cwd: string?): (boolean, string)
-    local result = process.exec(command, args or {}, {
+    const result = process.exec(command, args or {}, {
         cwd = cwd,
     })
 
@@ -25,7 +25,7 @@ function ShellHelpers.run(command: string, args: { string }?, cwd: string?): (bo
 end
 
 function ShellHelpers.runOrFail(command: string, args: { string }?, cwd: string?): string
-    local ok, output = ShellHelpers.run(command, args, cwd)
+    const ok, output = ShellHelpers.run(command, args, cwd)
     if not ok then
         stdio.ewrite(Chalk.red(`Error running command: {command}\n`))
         stdio.ewrite(`{output}\n`)
@@ -35,7 +35,7 @@ function ShellHelpers.runOrFail(command: string, args: { string }?, cwd: string?
 end
 
 function ShellHelpers.isCommandAvailable(command: string): boolean
-    local result = process.exec("which", { command })
+    const result = process.exec("which", { command })
     return result.ok
 end
 

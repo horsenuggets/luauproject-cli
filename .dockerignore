@@ -1,0 +1,10 @@
+# Exclude everything by default
+*
+
+# Files copied by Tests/Dockerfile
+!.luaurc
+!Build/Docker/luauproject
+!Packages/
+!rokit.toml
+!Source/
+!Tests/MockGH.sh

@@ -7,20 +7,20 @@ interactions, version comparison, and binary downloads.
 
 --]]
 
-local fs = require("@lune/fs")
-local net = require("@lune/net")
-local process = require("@lune/process")
-local serde = require("@lune/serde")
+const fs = require("@lune/fs")
+const net = require("@lune/net")
+const process = require("@lune/process")
+const serde = require("@lune/serde")
 
-local PathHelpers = require("@luauprojectcli/Helpers/PathHelpers")
+const PathHelpers = require("@luauprojectcli/Helpers/PathHelpers")
 
 ------------------------------------------------------------------------------------------
 -- Constants
 ------------------------------------------------------------------------------------------
 
-local REPOSITORY = "horsenuggets/luauproject-cli"
-local API_BASE = "https://api.github.com/repos"
-local IS_WINDOWS = process.os == "windows"
+const REPOSITORY = "horsenuggets/luauproject-cli"
+const API_BASE = "https://api.github.com/repos"
+const IS_WINDOWS = process.os == "windows"
 
 ------------------------------------------------------------------------------------------
 -- Types
@@ -40,7 +40,7 @@ export type Release = {
 -- Module
 ------------------------------------------------------------------------------------------
 
-local UpdateHelpers = {}
+const UpdateHelpers = {}
 
 --[[
     Returns the binary name for the current platform.
@@ -65,9 +65,9 @@ end
     Returns the release data or nil if the request failed.
 ]]
 function UpdateHelpers.getLatestRelease(): Release?
-    local url = `{API_BASE}/{REPOSITORY}/releases/latest`
+    const url = `{API_BASE}/{REPOSITORY}/releases/latest`
 
-    local response = net.request({
+    const response = net.request({
         url = url,
         headers = {
             ["Accept"] = "application/vnd.github.v3+json",
@@ -79,7 +79,7 @@ function UpdateHelpers.getLatestRelease(): Release?
         return nil
     end
 
-    local success, data = pcall(function()
+    const success, data = pcall(function()
         return serde.decode("json", response.body)
     end)
 
@@ -97,9 +97,9 @@ end
 function UpdateHelpers.getRelease(version: string): Release?
     assert(type(version) == "string", "version must be a string")
 
-    local url = `{API_BASE}/{REPOSITORY}/releases/tags/{version}`
+    const url = `{API_BASE}/{REPOSITORY}/releases/tags/{version}`
 
-    local response = net.request({
+    const response = net.request({
         url = url,
         headers = {
             ["Accept"] = "application/vnd.github.v3+json",
@@ -111,7 +111,7 @@ function UpdateHelpers.getRelease(version: string): Release?
         return nil
     end
 
-    local success, data = pcall(function()
+    const success, data = pcall(function()
         return serde.decode("json", response.body)
     end)
 
@@ -129,7 +129,7 @@ end
 function UpdateHelpers.findBinaryUrl(release: Release): string?
     assert(type(release) == "table", "release must be a table")
 
-    local binaryName = UpdateHelpers.getBinaryName()
+    const binaryName = UpdateHelpers.getBinaryName()
 
     for _, asset in release.assets do
         if asset.name == binaryName then
@@ -148,7 +148,7 @@ function UpdateHelpers.downloadFile(url: string, destPath: string): boolean
     assert(type(url) == "string", "url must be a string")
     assert(type(destPath) == "string", "destPath must be a string")
 
-    local response = net.request({
+    const response = net.request({
         url = url,
         headers = {
             ["User-Agent"] = "luauproject-cli",
@@ -160,7 +160,7 @@ function UpdateHelpers.downloadFile(url: string, destPath: string): boolean
     end
 
     -- Ensure parent directory exists
-    local parentDir = destPath:match("(.+)[/\\][^/\\]+$")
+    const parentDir = destPath:match("(.+)[/\\][^/\\]+$")
     if parentDir and not fs.isDir(parentDir) then
         fs.writeDir(parentDir)
     end
@@ -183,10 +183,10 @@ function UpdateHelpers.parseVersion(versionString: string): (number?, number?, n
     assert(type(versionString) == "string", "versionString must be a string")
 
     -- Trim whitespace
-    local trimmed = versionString:match("^%s*(.-)%s*$") or ""
+    const trimmed = versionString:match("^%s*(.-)%s*$") or ""
 
     -- Parse MAJOR.MINOR.PATCH format
-    local major, minor, patch = trimmed:match("^(%d+)%.(%d+)%.(%d+)$")
+    const major, minor, patch = trimmed:match("^(%d+)%.(%d+)%.(%d+)$")
 
     if not major or not minor or not patch then
         return nil, nil, nil
@@ -207,8 +207,8 @@ function UpdateHelpers.compareVersions(version1: string, version2: string): numb
     assert(type(version1) == "string", "version1 must be a string")
     assert(type(version2) == "string", "version2 must be a string")
 
-    local major1, minor1, patch1 = UpdateHelpers.parseVersion(version1)
-    local major2, minor2, patch2 = UpdateHelpers.parseVersion(version2)
+    const major1, minor1, patch1 = UpdateHelpers.parseVersion(version1)
+    const major2, minor2, patch2 = UpdateHelpers.parseVersion(version2)
 
     if not major1 or not major2 then
         return nil
@@ -238,8 +238,8 @@ function UpdateHelpers.getInstallPaths(): {
     versionsDir: string,
     currentFile: string,
 }
-    local homeDir = if IS_WINDOWS then process.env.USERPROFILE else process.env.HOME
-    local installDir = PathHelpers.normalize(`{homeDir}/.luauproject-cli`)
+    const homeDir = if IS_WINDOWS then process.env.USERPROFILE else process.env.HOME
+    const installDir = PathHelpers.normalize(`{homeDir}/.luauproject-cli`)
 
     return {
         installDir = installDir,
@@ -254,13 +254,13 @@ end
     Returns the version string or nil if not found.
 ]]
 function UpdateHelpers.getCurrentVersion(): string?
-    local paths = UpdateHelpers.getInstallPaths()
+    const paths = UpdateHelpers.getInstallPaths()
 
     if not fs.isFile(paths.currentFile) then
         return nil
     end
 
-    local content = fs.readFile(paths.currentFile)
+    const content = fs.readFile(paths.currentFile)
     return content:match("^%s*(.-)%s*$")
 end
 

@@ -11,8 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check PR title format
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
         run: |
-          TITLE="${{ github.event.pull_request.title }}"
           echo "Checking PR title: $TITLE"
 
           if [[ ! "$TITLE" =~ ^Release\ [0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -59,7 +60,7 @@ jobs:
         uses: CompeyDev/setup-rokit@v0.1.2
 
       - name: Check formatting
-        run: ./Submodules/luau-cicd/Scripts/CheckFormatting.luau
+        run: ./Submodules/luau-cicd/Scripts/CheckFormatting.exec.luau
 
   test:
     name: Run tests
@@ -77,10 +78,10 @@ jobs:
         run: wally install
 
       - name: Build executable
-        run: ./Scripts/BuildExecutable.luau linux-x86_64
+        run: ./Scripts/BuildExecutable.exec.luau linux-x86_64
 
       - name: Run tests
-        run: ./Scripts/RunTests.luau --no-docker
+        run: ./Scripts/RunTests.exec.luau --no-docker
 
   analyze:
     name: Static analysis
@@ -101,10 +102,10 @@ jobs:
         run: lune setup --no-update-luaurc
 
       - name: Generate version module
-        run: ./Scripts/GenerateVersion.luau
+        run: ./Scripts/GenerateVersion.exec.luau
 
       - name: Run static analysis
-        run: ./Submodules/luau-cicd/Scripts/RunStaticAnalysis.luau lune
+        run: ./Submodules/luau-cicd/Scripts/RunStaticAnalysis.exec.luau lune
 
   json-format:
     name: Check JSON format
@@ -127,7 +128,7 @@ jobs:
         uses: CompeyDev/setup-rokit@v0.1.2
 
       - name: Check JSON format
-        run: ./Submodules/luau-cicd/Scripts/CheckJsonFormat.luau
+        run: ./Submodules/luau-cicd/Scripts/CheckJsonFormat.exec.luau
 
   version:
     name: Validate version
@@ -143,22 +144,23 @@ jobs:
         uses: CompeyDev/setup-rokit@v0.1.2
 
       - name: Check version update
-        run: ./Submodules/luau-cicd/Scripts/EnsureProperVersionUpdate.luau
+        run: ./Submodules/luau-cicd/Scripts/EnsureProperVersionUpdate.exec.luau
 
       - name: Check version match
-        run: ./Submodules/luau-cicd/Scripts/CheckVersionMatch.luau
+        run: ./Submodules/luau-cicd/Scripts/CheckVersionMatch.exec.luau
 
       - name: Check changelog entry
-        run: ./Submodules/luau-cicd/Scripts/CheckChangelogVersion.luau
+        run: ./Submodules/luau-cicd/Scripts/CheckChangelogVersion.exec.luau
 
       - name: Check changelog format
-        run: ./Submodules/luau-cicd/Scripts/CheckChangelogFormat.luau
+        run: ./Submodules/luau-cicd/Scripts/CheckChangelogFormat.exec.luau
 
       - name: Verify PR title matches VERSION
+        env:
+          ACTUAL_TITLE: ${{ github.event.pull_request.title }}
         run: |
           VERSION=$(cat VERSION | tr -d '[:space:]')
           EXPECTED_TITLE="Release $VERSION"
-          ACTUAL_TITLE="${{ github.event.pull_request.title }}"
 
           if [ "$EXPECTED_TITLE" != "$ACTUAL_TITLE" ]; then
             echo "::error::PR title '$ACTUAL_TITLE' does not match VERSION file. Expected '$EXPECTED_TITLE'"
@@ -184,7 +186,35 @@ jobs:
         run: wally install
 
       - name: Build executable
-        run: ./Scripts/BuildExecutable.luau linux-x86_64
+        run: ./Scripts/BuildExecutable.exec.luau linux-x86_64
 
       - name: Run Docker tests
-        run: ./Scripts/RunTests.luau --docker
+        run: ./Scripts/RunTests.exec.luau --docker
+
+  build-test:
+    name: Build test ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - linux-x86_64
+          - linux-aarch64
+          - macos-x86_64
+          - macos-aarch64
+          - windows-x86_64
+          - windows-aarch64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install tooling
+        uses: CompeyDev/setup-rokit@v0.1.2
+
+      - name: Install packages
+        run: wally install
+
+      - name: Build
+        run: ./Scripts/BuildExecutable.exec.luau ${{ matrix.target }}

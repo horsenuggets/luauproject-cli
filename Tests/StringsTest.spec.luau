@@ -6,7 +6,7 @@ Tests for the strings helper module including toKebabCase and toPascalCase conve
 
 --]]
 
-local StringHelpers = require("@luauprojectcli/Helpers/StringHelpers")
+const StringHelpers = require("@luauprojectcli/Helpers/StringHelpers")
 
 return function()
     describe("toKebabCase", function()

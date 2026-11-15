@@ -1,0 +1,89 @@
+{
+    "[lua]": {
+        "editor.defaultFormatter": "JohnnyMorganz.stylua",
+        "editor.formatOnSave": true
+    },
+    "[luau]": {
+        "editor.defaultFormatter": "JohnnyMorganz.stylua",
+        "editor.formatOnSave": true
+    },
+    "[hcl]": {
+        "editor.defaultFormatter": "jkillian.custom-local-formatters",
+        "editor.detectIndentation": false,
+        "editor.formatOnSave": true,
+        "editor.formatOnSaveMode": "file",
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4
+    },
+    "[terraform]": {
+        "editor.defaultFormatter": "jkillian.custom-local-formatters",
+        "editor.detectIndentation": false,
+        "editor.formatOnSave": true,
+        "editor.formatOnSaveMode": "file",
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4
+    },
+    "[terraform-mock]": {
+        "editor.defaultFormatter": "jkillian.custom-local-formatters",
+        "editor.detectIndentation": false,
+        "editor.formatOnSave": true,
+        "editor.formatOnSaveMode": "file",
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4
+    },
+    "[terraform-search]": {
+        "editor.defaultFormatter": "jkillian.custom-local-formatters",
+        "editor.detectIndentation": false,
+        "editor.formatOnSave": true,
+        "editor.formatOnSaveMode": "file",
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4
+    },
+    "[terraform-test]": {
+        "editor.defaultFormatter": "jkillian.custom-local-formatters",
+        "editor.detectIndentation": false,
+        "editor.formatOnSave": true,
+        "editor.formatOnSaveMode": "file",
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4
+    },
+    "[terraform-vars]": {
+        "editor.defaultFormatter": "jkillian.custom-local-formatters",
+        "editor.detectIndentation": false,
+        "editor.formatOnSave": true,
+        "editor.formatOnSaveMode": "file",
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4
+    },
+    "customLocalFormatters.formatters": [
+        {
+            "command": "go -C Submodules/hcl4fmt run ./src/cmd/hcl4fmt -",
+            "languages": [
+                "hcl",
+                "terraform",
+                "terraform-mock",
+                "terraform-search",
+                "terraform-test",
+                "terraform-vars"
+            ]
+        }
+    ],
+    "luau-lsp.completion.autocompleteEnd": true,
+    "luau-lsp.completion.enableFragmentAutocomplete": true,
+    "luau-lsp.completion.fillCallArguments": false,
+    "luau-lsp.completion.imports.enabled": true,
+    "luau-lsp.completion.imports.separateGroupsWithLine": true,
+    "luau-lsp.completion.imports.stringRequires.enabled": true,
+    "luau-lsp.fflags.enableNewSolver": true,
+    "luau-lsp.hover.multilineFunctionDefinitions": true,
+    "luau-lsp.hover.showTableKinds": true,
+    "luau-lsp.inlayHints.hideHintsForErrorTypes": true,
+    "luau-lsp.sourcemap.autogenerate": true,
+    "luau-lsp.sourcemap.enabled": true,
+    "luau-lsp.sourcemap.rojoProjectFile": "dev.project.json",
+    "luau-lsp.sourcemap.sourcemapFile": "sourcemap.json",
+    "search.exclude": {
+        "**/Submodules/**": true
+    },
+    "search.useIgnoreFiles": true
+}

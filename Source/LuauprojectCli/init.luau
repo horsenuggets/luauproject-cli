@@ -9,12 +9,12 @@ with process arguments.
 
 --]]
 
-local process = require("@lune/process")
+const process = require("@lune/process")
 
-local Commandline = require("@packages/Commandline")
-local LuauprojectCommand = require("@luauprojectcli/LuauprojectCommand")
+const Commandline = require("@packages/Commandline")
+const LuauprojectCommand = require("@luauprojectcli/LuauprojectCommand")
 
-local function luauprojectCli()
+const function luauprojectCli()
     Commandline.registerCommand(LuauprojectCommand)
     LuauprojectCommand:Execute(process.args)
 end

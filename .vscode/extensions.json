@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+        "hashicorp.hcl",
+        "hashicorp.terraform",
+        "jkillian.custom-local-formatters",
+        "JohnnyMorganz.luau-lsp",
+        "JohnnyMorganz.stylua"
+    ]
+}

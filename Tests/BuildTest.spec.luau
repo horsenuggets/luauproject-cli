@@ -6,8 +6,8 @@ Tests that verify the CLI builds correctly and the built executable works as exp
 
 --]]
 
-local fs = require("@lune/fs")
-local process = require("@lune/process")
+const fs = require("@lune/fs")
+const process = require("@lune/process")
 
 return function()
     describe("Build", function()
@@ -37,25 +37,25 @@ return function()
             end)
 
             it("should run without errors", function()
-                local result = process.exec(cliBinary, { "--help" })
+                const result = process.exec(cliBinary, { "--help" })
                 expect(result.ok).to.equal(true)
             end)
 
             it("should display help when called with --help", function()
-                local result = process.exec(cliBinary, { "--help" })
+                const result = process.exec(cliBinary, { "--help" })
                 expect(result.ok).to.equal(true)
                 expect(result.stdout:match("luauproject")).to.be.ok()
             end)
 
             it("should display version when called with --version", function()
-                local result = process.exec(cliBinary, { "--version" })
+                const result = process.exec(cliBinary, { "--version" })
                 expect(result.ok).to.equal(true)
                 -- Version should match semver pattern
                 expect(result.stdout:match("%d+%.%d+%.%d+")).to.be.ok()
             end)
 
             it("should have new subcommand", function()
-                local result = process.exec(cliBinary, { "--help" })
+                const result = process.exec(cliBinary, { "--help" })
                 expect(result.ok).to.equal(true)
                 expect(result.stdout:match("new")).to.be.ok()
             end)

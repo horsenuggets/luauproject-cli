@@ -2,21 +2,23 @@
 
 --[[
 
-GenerateVersion
+GenerateVersion.exec
 
 Reads the VERSION file and generates a version module for embedding at build time.
 
-[Usage] ./Scripts/GenerateVersion.luau
+[Usage] ./Scripts/GenerateVersion.exec.luau
 
 --]]
 
-local Toolkit = require("@packages/Commandline").Toolkit
+const Toolkit = require("@packages/Commandline").Toolkit
 
-local function generateVersion()
+const GenerateVersion = {}
+
+function GenerateVersion.exec()
     Toolkit.generateVersion({
         VersionFile = "VERSION",
         OutputPath = "Source/LuauprojectCli/LuauprojectCommand/__VERSION__.luau",
     })
 end
 
-generateVersion()
+GenerateVersion.exec()

@@ -2,7 +2,12 @@
 # Dockerfile
 #
 # This container provides an isolated environment with all the tools needed to test
-# the luauproject CLI: git, rokit (for wally/lune), and a mock gh CLI.
+# the luauproject CLI: git, rokit (for wally/lune), and a mock gh CLI. It contains both
+# the standalone executable (on PATH as luauproject) and the CLI source (for lune run).
+#
+# The build context is the repo root, and Build/Docker/luauproject must be built first
+# with ./Scripts/BuildExecutable.exec.luau linux-x86_64 Build/Docker. The Docker test helpers
+# do both automatically.
 #
 
 # Use linux/amd64 platform explicitly since forked tools may not have ARM64 releases
@@ -28,35 +33,39 @@ RUN git config --global user.email "test@example.com" && \
 RUN curl -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | bash
 ENV PATH="/root/.rokit/bin:${PATH}"
 
-# Trust all tools used by the luau-package-template and install Lune/Wally globally
+# Trust all tools used by this repo and the luau-package-template
 RUN rokit trust horsenuggets/lune && \
     rokit trust horsenuggets/wally && \
     rokit trust horsenuggets/luau-lsp && \
     rokit trust johnnymorganz/stylua && \
-    rokit trust horsenuggets/rojo && \
-    rokit add horsenuggets/lune@0.10.4-horse.14.2 --global && \
-    rokit add horsenuggets/wally@0.3.2-horse.5.1 --global
+    rokit trust horsenuggets/rojo
+
+# Install the exact tool versions pinned in rokit.toml. Rokit shims resolve versions from
+# the nearest rokit.toml, so the CLI wrapper below (which runs from the repo directory)
+# fails if these versions aren't installed. Copying rokit.toml on its own keeps this layer
+# cached until the pins change.
+COPY rokit.toml /opt/luauproject-cli/rokit.toml
+RUN cd /opt/luauproject-cli && rokit install
 
 # Create mock gh CLI script
 COPY Tests/MockGH.sh /usr/local/bin/gh
 RUN chmod +x /usr/local/bin/gh
 
-# Copy CLI source code for running via lune
-# Packages are already installed on host, so we just copy them directly
-COPY . /opt/luauproject-cli
+# Skip rokit/wally install in generated projects to avoid GitHub API rate limits in tests
+ENV LUAUPROJECT_SKIP_INSTALL=1
+
+# Copy CLI source code for running via lune. Packages are already installed on the host,
+# so they're copied directly.
+COPY .luaurc /opt/luauproject-cli/.luaurc
+COPY Packages /opt/luauproject-cli/Packages
+COPY Source /opt/luauproject-cli/Source
 
 # Remove @lune alias from .luaurc as it's only needed for IDE type checking
 RUN cd /opt/luauproject-cli && \
     sed -i '/"lune":/d' .luaurc
 
-# Create wrapper script for luauproject that runs via lune
-# We capture the original working directory before cd'ing, and pass it as LUAUPROJECT_CWD
-# LUAUPROJECT_SKIP_INSTALL skips rokit/wally install to avoid GitHub API rate limits in tests
-# Note: Don't use -- after the script name as lune passes it as the first argument
-RUN echo '#!/bin/bash' > /usr/local/bin/luauproject && \
-    echo 'ORIG_CWD="$(pwd)"' >> /usr/local/bin/luauproject && \
-    echo 'cd /opt/luauproject-cli && LUAUPROJECT_CWD="$ORIG_CWD" LUAUPROJECT_SKIP_INSTALL=1 lune run Source/LuauprojectCli "$@"' >> /usr/local/bin/luauproject && \
-    chmod +x /usr/local/bin/luauproject
+# Copy the standalone executable last, since it changes most often
+COPY Build/Docker/luauproject /usr/local/bin/luauproject
 
 # Create workspace directory
 WORKDIR /workspace
