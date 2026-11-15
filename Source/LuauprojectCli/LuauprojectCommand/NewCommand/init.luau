@@ -168,6 +168,10 @@ end
 const function getOwner(flags: any): string
     if flags.owner.Value and flags.owner.Value ~= "" then
         const owner = GitHubHelpers.normalizeOwner(flags.owner.Value)
+        if owner == "" then
+            stdio.ewrite(Chalk.red("GitHub owner is empty after correction.\n"))
+            process.exit(1)
+        end
         if owner ~= flags.owner.Value then
             print(`Using "{Chalk.bold(owner)}" as the GitHub owner.`)
         end
@@ -176,13 +180,9 @@ const function getOwner(flags: any): string
 
     const owners = GitHubHelpers.getAvailableOwners()
 
-    if #owners == 1 then
-        return GitHubHelpers.normalizeOwner(PromptHelpers.prompt("GitHub owner or organization", owners[1]))
-    end
-
     while true do
-        if #owners == 0 then
-            const result = GitHubHelpers.normalizeOwner(PromptHelpers.prompt("GitHub owner or organization"))
+        if #owners <= 1 then
+            const result = GitHubHelpers.normalizeOwner(PromptHelpers.prompt("GitHub owner or organization", owners[1]))
             if result ~= "" then
                 return result
             end
@@ -752,11 +752,7 @@ end
 const function connectExistingRepository(config: ProjectConfig)
     printStep("Connecting to existing GitHub repository...")
 
-    const fullName = `{config.Owner}/{config.Name}`
-    const protocolOk, protocol = ShellHelpers.run("gh", { "config", "get", "git_protocol" })
-    const remoteUrl = if protocolOk and protocol:match("ssh")
-        then `git@github.com:{fullName}.git`
-        else `https://github.com/{fullName}.git`
+    const remoteUrl = GitHubHelpers.getRemoteUrl(`{config.Owner}/{config.Name}`, GitHubHelpers.getGitProtocol())
 
     ShellHelpers.runOrFail("git", { "remote", "add", "origin", remoteUrl }, config.ProjectPath)
     ShellHelpers.runOrFail("git", { "push", "-u", "origin", "main" }, config.ProjectPath)
