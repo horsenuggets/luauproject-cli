@@ -111,6 +111,13 @@ return function()
                     expect(env.fileExists("/workspace/my-test-project/README.md")).to.equal(true)
                     expect(env.dirExists("/workspace/my-test-project/.git")).to.equal(true)
 
+                    const releaseCi = env.readFile("/workspace/my-test-project/.github/workflows/release.ci.yml")
+                    expect(releaseCi:find("verify-wally-auth", 1, true)).to.equal(nil)
+                    expect(releaseCi:find("validate-pr-title", 1, true)).to.be.ok()
+                    const releaseCd = env.readFile("/workspace/my-test-project/.github/workflows/release.cd.yml")
+                    expect(releaseCd:find("Publish to Wally", 1, true)).to.equal(nil)
+                    expect(releaseCd:find("Create GitHub release", 1, true)).to.be.ok()
+
                     env.cleanup()
                 end)
 

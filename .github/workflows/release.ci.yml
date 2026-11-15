@@ -1,13 +1,14 @@
-name: Release checks
+name: Release / CI
 
 on:
   pull_request:
+    types: [opened, edited, reopened, synchronize]
     branches:
       - release
 
 jobs:
-  pr-title:
-    name: Validate PR title
+  validate-pr-title:
+    name: validate-pr-title
     runs-on: ubuntu-latest
     steps:
       - name: Check PR title format
@@ -23,8 +24,8 @@ jobs:
 
           echo "PR title is valid."
 
-  diff-check:
-    name: Verify diff matches main
+  verify-diff-matches-main:
+    name: verify-diff-matches-main
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -47,8 +48,8 @@ jobs:
 
           echo "PR branch matches main exactly."
 
-  format:
-    name: Check formatting
+  check-formatting:
+    name: check-formatting
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -62,8 +63,8 @@ jobs:
       - name: Check formatting
         run: ./Submodules/luau-cicd/Scripts/CheckFormatting.exec.luau
 
-  test:
-    name: Run tests
+  run-tests:
+    name: run-tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -83,8 +84,8 @@ jobs:
       - name: Run tests
         run: ./Scripts/RunTests.exec.luau --no-docker
 
-  analyze:
-    name: Static analysis
+  static-analysis:
+    name: static-analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -99,7 +100,7 @@ jobs:
         run: wally install
 
       - name: Setup Lune typedefs
-        run: lune setup --no-update-luaurc
+        run: lune setup
 
       - name: Generate version module
         run: ./Scripts/GenerateVersion.exec.luau
@@ -107,8 +108,8 @@ jobs:
       - name: Run static analysis
         run: ./Submodules/luau-cicd/Scripts/RunStaticAnalysis.exec.luau lune
 
-  json-format:
-    name: Check JSON format
+  check-json-format:
+    name: check-json-format
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -130,8 +131,8 @@ jobs:
       - name: Check JSON format
         run: ./Submodules/luau-cicd/Scripts/CheckJsonFormat.exec.luau
 
-  version:
-    name: Validate version
+  validate-version:
+    name: validate-version
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -169,10 +170,10 @@ jobs:
 
           echo "PR title matches VERSION file."
 
-  docker-test:
-    name: Docker integration tests
+  docker-integration-tests:
+    name: docker-integration-tests
     runs-on: ubuntu-latest
-    needs: test
+    needs: run-tests
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -192,7 +193,7 @@ jobs:
         run: ./Scripts/RunTests.exec.luau --docker
 
   build-test:
-    name: Build test ${{ matrix.target }}
+    name: build-test-${{ matrix.target }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

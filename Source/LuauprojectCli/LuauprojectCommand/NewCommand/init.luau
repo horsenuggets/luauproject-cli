@@ -19,6 +19,7 @@ const ShellHelpers = require("@luauprojectcli/Helpers/ShellHelpers")
 const StringHelpers = require("@luauprojectcli/Helpers/StringHelpers")
 const TerraformHelpers = require("@luauprojectcli/Helpers/TerraformHelpers")
 const WallyHelpers = require("@luauprojectcli/Helpers/WallyHelpers")
+const WorkflowHelpers = require("@luauprojectcli/Helpers/WorkflowHelpers")
 const fs = require("@lune/fs")
 const process = require("@lune/process")
 const serde = require("@lune/serde")
@@ -581,102 +582,6 @@ const function setupSubmodules(config: ProjectConfig)
     end
 end
 
--- Removes a YAML job block from workflow content. Finds the
--- job key matching the pattern at the given indent level and
--- removes everything until the next job key at the same level.
-const function removeYamlJobBlock(content: string, jobKeyPattern: string): string
-    const lines = {}
-    local removing = false
-    local jobIndent = 0
-
-    for line in (content .. "\n"):gmatch("(.-)\n") do
-        if not removing then
-            -- Check if this line starts the job block to remove
-            const indent = #(line:match("^( *)") or "")
-            if line:match(jobKeyPattern) then
-                removing = true
-                jobIndent = indent
-                continue
-            end
-            table.insert(lines, line)
-        else
-            -- Check if we've reached the next job at the same
-            -- indent level (or a non-indented line)
-            const indent = #(line:match("^( *)") or "")
-            const isBlank = line:match("^%s*$")
-            if not isBlank and indent <= jobIndent and line:match("^%s+%S") then
-                removing = false
-                table.insert(lines, line)
-            end
-            -- Skip blank lines and indented content while
-            -- removing
-        end
-    end
-
-    return table.concat(lines, "\n") .. "\n"
-end
-
--- Removes a YAML step block from workflow content. Finds the
--- step with the matching name and removes it through to the
--- next step or end of steps.
-const function removeYamlStepBlock(content: string, stepNamePattern: string): string
-    const lines = {}
-    local removing = false
-    local stepIndent = 0
-
-    for line in (content .. "\n"):gmatch("(.-)\n") do
-        if not removing then
-            if line:match(stepNamePattern) then
-                -- Also remove the preceding "- name:" line if
-                -- this is the name line itself, or find the
-                -- step start
-                removing = true
-                -- Find the indent of "- name:"
-                stepIndent = #(line:match("^( *)") or "")
-                -- Remove the previous "- name:" line if it was
-                -- already added
-                if #lines > 0 and lines[#lines]:match("^%s+%- name:") then
-                    table.remove(lines)
-                end
-                continue
-            end
-            table.insert(lines, line)
-        else
-            const indent = #(line:match("^( *)") or "")
-            const isBlank = line:match("^%s*$")
-            -- A new step starts with "- name:" at the same or
-            -- lesser indent
-            if not isBlank and indent <= stepIndent and line:match("^%s+%- name:") then
-                removing = false
-                table.insert(lines, line)
-            elseif not isBlank and indent < stepIndent then
-                removing = false
-                table.insert(lines, line)
-            end
-        end
-    end
-
-    return table.concat(lines, "\n") .. "\n"
-end
-
-const function stripWallyFromReleaseChecks(workflowPath: string)
-    if not fs.isFile(workflowPath) then
-        return
-    end
-    local content = fs.readFile(workflowPath)
-    content = removeYamlJobBlock(content, "^%s+wally%-auth:%s*$")
-    fs.writeFile(workflowPath, content)
-end
-
-const function stripWallyFromPublish(workflowPath: string)
-    if not fs.isFile(workflowPath) then
-        return
-    end
-    local content = fs.readFile(workflowPath)
-    content = removeYamlStepBlock(content, "name: Publish to Wally")
-    fs.writeFile(workflowPath, content)
-end
-
 const function copyWorkflows(config: ProjectConfig)
     printStep("Setting up CI workflows...")
 
@@ -688,21 +593,15 @@ const function copyWorkflows(config: ProjectConfig)
         fs.writeDir(workflowsTargetDir)
     end
 
-    -- Copy all workflow files
+    -- Copy all workflow files, dropping Wally configuration for private packages
     if fs.isDir(workflowsSourceDir) then
         for _, entry in fs.readDir(workflowsSourceDir) do
             const sourcePath = `{workflowsSourceDir}/{entry}`
-            const targetPath = `{workflowsTargetDir}/{entry}`
             if fs.isFile(sourcePath) then
-                fs.copy(sourcePath, targetPath)
+                const content = WorkflowHelpers.prepareWorkflow(entry, fs.readFile(sourcePath), config.IsPrivatePackage)
+                fs.writeFile(`{workflowsTargetDir}/{entry}`, content)
             end
         end
-    end
-
-    -- Strip Wally-related configuration for private packages
-    if config.IsPrivatePackage then
-        stripWallyFromReleaseChecks(`{workflowsTargetDir}/release-checks.yml`)
-        stripWallyFromPublish(`{workflowsTargetDir}/publish.yml`)
     end
 end
 
