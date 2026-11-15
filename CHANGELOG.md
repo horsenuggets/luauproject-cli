@@ -7,8 +7,6 @@
 - Re-prompt on invalid interactive input instead of exiting
 - Normalize displayed paths so they never contain double slashes and directories end with a slash
 - Bump Lune to 0.11.1-horse.16.3 and commandline-luau to 0.2.4, and use `const` throughout
-- Include `.luaurc` in the Wally package
-
 ## 1.0.1
 - Replace custom install/update commands with shared Toolkit abstractions from commandline-luau 0.2.0
 - Use direct binary self-replacement instead of launcher pattern
