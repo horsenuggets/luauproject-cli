@@ -94,6 +94,31 @@ function GitHubHelpers.parseRepoInfo(json: string): RepoInfo?
 end
 
 --[[
+    Builds the Git remote URL for a repository from the Git protocol configured in the
+    GitHub CLI. Anything other than "ssh" uses HTTPS, matching the CLI's own default.
+]]
+function GitHubHelpers.getRemoteUrl(fullName: string, protocol: string?): string
+    assert(type(fullName) == "string", "fullName must be a string")
+    assert(protocol == nil or type(protocol) == "string", "protocol must be a string or nil")
+
+    if protocol and protocol:match("^%s*(.-)%s*$") == "ssh" then
+        return `git@github.com:{fullName}.git`
+    end
+    return `https://github.com/{fullName}.git`
+end
+
+--[[
+    Returns the Git protocol the GitHub CLI uses for github.com, or nil if it can't be read.
+]]
+function GitHubHelpers.getGitProtocol(): string?
+    const result = process.exec("gh", { "config", "get", "git_protocol", "--host", "github.com" })
+    if not result.ok then
+        return nil
+    end
+    return result.stdout
+end
+
+--[[
     Looks up an existing repository. Returns nil if it doesn't exist or can't be accessed.
 ]]
 function GitHubHelpers.getRepoInfo(owner: string, name: string): RepoInfo?
