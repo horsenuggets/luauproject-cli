@@ -755,7 +755,7 @@ const function connectExistingRepository(config: ProjectConfig)
     const remoteUrl = GitHubHelpers.getRemoteUrl(`{config.Owner}/{config.Name}`, GitHubHelpers.getGitProtocol())
 
     ShellHelpers.runOrFail("git", { "remote", "add", "origin", remoteUrl }, config.ProjectPath)
-    ShellHelpers.runOrFail("git", { "push", "-u", "origin", "main" }, config.ProjectPath)
+    ShellHelpers.runOrFail("git", GitHubHelpers.getPushArgs("main"), config.ProjectPath)
 end
 
 const function configureRepoSettings(config: ProjectConfig)
@@ -788,14 +788,14 @@ end
 const function createDevBranch(config: ProjectConfig)
     printStep("Creating dev branch...")
     ShellHelpers.runOrFail("git", { "checkout", "-b", "dev" }, config.ProjectPath)
-    ShellHelpers.runOrFail("git", { "push", "-u", "origin", "dev" }, config.ProjectPath)
+    ShellHelpers.runOrFail("git", GitHubHelpers.getPushArgs("dev"), config.ProjectPath)
     ShellHelpers.runOrFail("git", { "checkout", "main" }, config.ProjectPath)
 end
 
 const function createReleaseBranch(config: ProjectConfig)
     printStep("Creating release branch...")
     ShellHelpers.runOrFail("git", { "checkout", "-b", "release" }, config.ProjectPath)
-    ShellHelpers.runOrFail("git", { "push", "-u", "origin", "release" }, config.ProjectPath)
+    ShellHelpers.runOrFail("git", GitHubHelpers.getPushArgs("release"), config.ProjectPath)
     ShellHelpers.runOrFail("git", { "checkout", "main" }, config.ProjectPath)
 end
 

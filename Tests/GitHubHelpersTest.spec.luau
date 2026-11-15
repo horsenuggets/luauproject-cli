@@ -114,6 +114,23 @@ return function()
         end)
     end)
 
+    describe("GitHubHelpers.getPushArgs", function()
+        it("should push the branch to origin with gh as the github.com credential helper", function()
+            const args = GitHubHelpers.getPushArgs("dev")
+            expect(table.concat(args, " ")).to.equal(
+                "-c credential.https://github.com.helper= "
+                    .. "-c credential.https://github.com.helper=!gh auth git-credential "
+                    .. "push -u origin dev"
+            )
+        end)
+
+        it("should reset inherited helpers before adding the gh helper", function()
+            const args = GitHubHelpers.getPushArgs("main")
+            expect(args[2]).to.equal("credential.https://github.com.helper=")
+            expect(args[4]).to.equal("credential.https://github.com.helper=!gh auth git-credential")
+        end)
+    end)
+
     describe("GitHubHelpers.parseRepoInfo", function()
         it("should parse an empty private repository", function()
             const info = GitHubHelpers.parseRepoInfo('{"isEmpty":true,"isPrivate":true}')
