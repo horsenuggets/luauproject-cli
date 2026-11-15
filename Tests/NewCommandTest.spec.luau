@@ -72,6 +72,19 @@ return function()
             DockerEnvironmentHelpers.cleanupAll()
         end)
 
+        it("should keep separate live container environments isolated", function()
+            const first = DockerEnvironmentHelpers.create()
+            const second = DockerEnvironmentHelpers.create()
+
+            expect(first.containerId == second.containerId).to.equal(false)
+            first.writeFile("/workspace/isolation-check.txt", "first")
+            expect(first.readFile("/workspace/isolation-check.txt")).to.equal("first")
+            expect(second.fileExists("/workspace/isolation-check.txt")).to.equal(false)
+
+            first.cleanup()
+            second.cleanup()
+        end)
+
         describe("with built executable", function()
             describe("standalone executable", function()
                 it("should be a compiled binary rather than a script", function()

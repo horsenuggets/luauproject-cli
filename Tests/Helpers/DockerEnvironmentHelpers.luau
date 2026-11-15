@@ -141,14 +141,9 @@ end
 function DockerEnvironmentHelpers.create(): DockerEnv
     assert(isPrepared, "Call DockerEnvironmentHelpers.prepare() in a beforeAll hook before create().")
 
-    const timestamp = tostring(os.time()) .. tostring(math.random(10000, 99999))
-    const containerName = `luauproject-test-{timestamp}`
-
     const startResult = process.exec("docker", {
         "run",
         "-d",
-        "--name",
-        containerName,
         "-w",
         CONTAINER_WORK_DIR,
         DOCKER_IMAGE,
