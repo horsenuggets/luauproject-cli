@@ -295,6 +295,112 @@ return function()
 
                     env.cleanup()
                 end)
+
+                it("should lowercase a mixed-case owner in wally.toml", function()
+                    const env = DockerEnvironmentHelpers.create()
+
+                    const result = env.runCli(buildArgs("case-proj", "Test", "My-Org"))
+
+                    expectSuccess(result)
+                    const wallyContent = env.readFile("/workspace/case-proj/wally.toml")
+                    expect(wallyContent:match('name = "my%-org/case%-proj"')).to.be.ok()
+
+                    env.cleanup()
+                end)
+            end)
+
+            describe("existing repository connection", function()
+                const function existingArgs(name: string): { string }
+                    return {
+                        "new",
+                        "--name",
+                        name,
+                        "--description",
+                        "Test",
+                        "--owner",
+                        "Test-User",
+                        "--path",
+                        `/workspace/{name}`,
+                        "--existing",
+                        "--privatepackage",
+                    }
+                end
+
+                it("should push to an existing empty repository", function()
+                    const env = DockerEnvironmentHelpers.create()
+
+                    -- Stand in for Terraform, and route the test owner's GitHub remotes
+                    -- to a local bare repository so the push can be verified offline. The
+                    -- template is still cloned from GitHub, so only the owner is rerouted.
+                    env.writeFile("/usr/local/bin/terraform", '#!/bin/bash\necho "Terraform v1.14.8"\n')
+                    expectSuccess(env.exec("chmod", { "+x", "/usr/local/bin/terraform" }))
+                    expectSuccess(env.exec("git", { "init", "--bare", "-q", "/remotes/test-user/connected-proj.git" }))
+                    expectSuccess(env.exec("git", {
+                        "config",
+                        "--global",
+                        "url./remotes/test-user/.insteadOf",
+                        "https://github.com/test-user/",
+                    }))
+
+                    const result = env.runCli(existingArgs("connected-proj"))
+
+                    expectSuccess(result)
+                    expect(result.stdout:match("Connecting to existing GitHub repository")).to.be.ok()
+
+                    const remote = env.exec("git", { "-C", "/workspace/connected-proj", "config", "remote.origin.url" })
+                    expectSuccess(remote)
+                    expect(remote.stdout:match("^https://github%.com/test%-user/connected%-proj%.git")).to.be.ok()
+
+                    const branches = env.exec("git", {
+                        "-C",
+                        "/remotes/test-user/connected-proj.git",
+                        "branch",
+                        "--format=%(refname:short)",
+                    })
+                    expectSuccess(branches)
+                    for _, branch in { "dev", "main", "release" } do
+                        expect(branches.stdout:match(`%f[%w]{branch}%f[%W]`)).to.be.ok()
+                    end
+
+                    env.cleanup()
+                end)
+
+                it("should reject a repository that doesn't exist", function()
+                    const env = DockerEnvironmentHelpers.create()
+
+                    const result = env.runCli(existingArgs("missing-proj"))
+
+                    expect(result.ok).to.equal(false)
+                    expect(result.stderr:match("was not found or is not accessible")).to.be.ok()
+                    expect(env.dirExists("/workspace/missing-proj")).to.equal(false)
+
+                    env.cleanup()
+                end)
+
+                it("should reject a repository that isn't empty", function()
+                    const env = DockerEnvironmentHelpers.create()
+
+                    const result = env.runCli(existingArgs("nonempty-proj"))
+
+                    expect(result.ok).to.equal(false)
+                    expect(result.stderr:match("is not empty")).to.be.ok()
+                    expect(env.dirExists("/workspace/nonempty-proj")).to.equal(false)
+
+                    env.cleanup()
+                end)
+
+                it("should reject --existing combined with --nogithub", function()
+                    const env = DockerEnvironmentHelpers.create()
+
+                    const args = existingArgs("conflict-proj")
+                    table.insert(args, "--nogithub")
+                    const result = env.runCli(args)
+
+                    expect(result.ok).to.equal(false)
+                    expect(result.stderr:match("cannot be combined")).to.be.ok()
+
+                    env.cleanup()
+                end)
             end)
 
             describe("edge cases", function()

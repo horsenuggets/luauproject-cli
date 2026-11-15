@@ -100,6 +100,20 @@ return function()
         end)
     end)
 
+    describe("GitHubHelpers.getRemoteUrl", function()
+        it("should use SSH when the protocol is ssh", function()
+            expect(GitHubHelpers.getRemoteUrl("my-org/my-proj", "ssh\n")).to.equal("git@github.com:my-org/my-proj.git")
+        end)
+
+        it("should use HTTPS for https, unknown, or missing protocols", function()
+            const expected = "https://github.com/my-org/my-proj.git"
+            expect(GitHubHelpers.getRemoteUrl("my-org/my-proj", "https")).to.equal(expected)
+            expect(GitHubHelpers.getRemoteUrl("my-org/my-proj", "")).to.equal(expected)
+            expect(GitHubHelpers.getRemoteUrl("my-org/my-proj", "not-ssh")).to.equal(expected)
+            expect(GitHubHelpers.getRemoteUrl("my-org/my-proj", nil)).to.equal(expected)
+        end)
+    end)
+
     describe("GitHubHelpers.parseRepoInfo", function()
         it("should parse an empty private repository", function()
             const info = GitHubHelpers.parseRepoInfo('{"isEmpty":true,"isPrivate":true}')

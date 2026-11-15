@@ -78,6 +78,21 @@ case "$1" in
             fi
 
             exit 0
+
+        elif [[ "$2" == "view" ]]; then
+            # The repo name decides the result, so tests can cover each case without
+            # extra setup. Names starting with "missing-" don't exist, and names starting
+            # with "nonempty-" already have commits.
+            REPO_NAME="${3#*/}"
+            if [[ "$REPO_NAME" == missing-* ]]; then
+                echo "GraphQL: Could not resolve to a Repository with the name '$3'." >&2
+                exit 1
+            elif [[ "$REPO_NAME" == nonempty-* ]]; then
+                echo '{"isEmpty":false,"isPrivate":false}'
+            else
+                echo '{"isEmpty":true,"isPrivate":true}'
+            fi
+            exit 0
         fi
         ;;
 
