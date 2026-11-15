@@ -40,7 +40,7 @@ type ProjectConfig = {
     Description: string,
     Owner: string,
     ProjectPath: string,
-    CreateGithubRepo: boolean,
+    RepoMode: GitHubHelpers.RepoMode,
     IsPrivate: boolean,
     IsPrivatePackage: boolean,
 }
@@ -93,7 +93,7 @@ const function printSuccess(config: ProjectConfig)
     print()
     print(`Location is {Chalk.dim(PathHelpers.formatDirectory(config.ProjectPath))}.`)
 
-    if config.CreateGithubRepo then
+    if config.RepoMode ~= "None" then
         print(`Repository is at {Chalk.bold(Chalk.blueBright(`https://github.com/{config.Owner}/{config.Name}`))}.`)
     end
 end
@@ -167,18 +167,22 @@ end
 
 const function getOwner(flags: any): string
     if flags.owner.Value and flags.owner.Value ~= "" then
-        return flags.owner.Value
+        const owner = GitHubHelpers.normalizeOwner(flags.owner.Value)
+        if owner ~= flags.owner.Value then
+            print(`Using "{Chalk.bold(owner)}" as the GitHub owner.`)
+        end
+        return owner
     end
 
     const owners = GitHubHelpers.getAvailableOwners()
 
     if #owners == 1 then
-        return PromptHelpers.prompt("GitHub owner or organization", owners[1])
+        return GitHubHelpers.normalizeOwner(PromptHelpers.prompt("GitHub owner or organization", owners[1]))
     end
 
     while true do
         if #owners == 0 then
-            const result = PromptHelpers.prompt("GitHub owner or organization")
+            const result = GitHubHelpers.normalizeOwner(PromptHelpers.prompt("GitHub owner or organization"))
             if result ~= "" then
                 return result
             end
@@ -193,27 +197,71 @@ const function getOwner(flags: any): string
     end
 end
 
-const function shouldCreateGithubRepo(flags: any): boolean
-    if flags.nogithub.Value then
-        return false
+const function promptRepoMode(): GitHubHelpers.RepoMode
+    const labels = {}
+    for _, choice in GitHubHelpers.RepoModeChoices do
+        table.insert(labels, choice.Label)
     end
-    if flags.github.Value or flags.private.Value then
-        return true
+
+    while true do
+        const index = stdio.prompt("select", "GitHub repository", labels)
+        if index then
+            return GitHubHelpers.RepoModeChoices[index].Mode
+        end
+        stdio.ewrite(Chalk.red("Please choose how to set up the GitHub repository.\n"))
     end
-    return PromptHelpers.promptConfirm("Create GitHub repository?", true)
 end
 
-const function shouldBePrivate(flags: any, createGithubRepo: boolean): boolean
-    if not createGithubRepo then
-        return false
+-- Returns whether the repository is private if it can be connected to, or prints an error
+-- and returns nil if it doesn't exist or already has commits
+const function checkExistingRepo(owner: string, name: string): boolean?
+    const fullName = `{owner}/{name}`
+    const info = GitHubHelpers.getRepoInfo(owner, name)
+    if not info then
+        stdio.ewrite(Chalk.red(`Repository "{fullName}" was not found or is not accessible.\n`))
+        return nil
     end
-    if flags.private.Value then
-        return true
+    if not info.IsEmpty then
+        stdio.ewrite(Chalk.red(`Repository "{fullName}" is not empty, so the project can't be pushed to it.\n`))
+        return nil
     end
-    if flags.nogithub.Value or flags.github.Value then
-        return false
+    return info.IsPrivate
+end
+
+const function getRepoSetup(flags: any, owner: string, name: string): (GitHubHelpers.RepoMode, boolean)
+    const flagMode, flagError = GitHubHelpers.resolveRepoMode({
+        Existing = flags.existing.Value == true,
+        Github = flags.github.Value == true,
+        NoGithub = flags.nogithub.Value == true,
+        Private = flags.private.Value == true,
+    })
+    if flagError then
+        stdio.ewrite(Chalk.red(`{flagError}\n`))
+        process.exit(1)
     end
-    return PromptHelpers.promptConfirm("Private repository?", false)
+
+    while true do
+        const mode = flagMode or promptRepoMode()
+
+        if mode == "None" then
+            return mode, false
+        end
+
+        if mode == "New" then
+            if flagMode then
+                return mode, flags.private.Value == true
+            end
+            return mode, PromptHelpers.promptConfirm("Private repository?", false)
+        end
+
+        const isPrivate = checkExistingRepo(owner, name)
+        if isPrivate ~= nil then
+            return mode, isPrivate
+        end
+        if flagMode then
+            process.exit(1)
+        end
+    end
 end
 
 const function shouldBePrivatePackage(flags: any): boolean
@@ -280,8 +328,7 @@ const function gatherProjectConfig(flags: any): ProjectConfig
     const name = getProjectName(flags)
     const description = getDescription(flags)
     const owner = getOwner(flags)
-    const createGithubRepo = shouldCreateGithubRepo(flags)
-    const isPrivate = shouldBePrivate(flags, createGithubRepo)
+    const repoMode, isPrivate = getRepoSetup(flags, owner, name)
     const isPrivatePackage = shouldBePrivatePackage(flags)
     const projectPath = getProjectPath(flags, name)
 
@@ -291,7 +338,7 @@ const function gatherProjectConfig(flags: any): ProjectConfig
         Description = description,
         Owner = owner,
         ProjectPath = projectPath,
-        CreateGithubRepo = createGithubRepo,
+        RepoMode = repoMode,
         IsPrivate = isPrivate,
         IsPrivatePackage = isPrivatePackage,
     }
@@ -309,7 +356,7 @@ end
 
 const function initializeGitRepo(projectPath: string)
     printStep("Initializing Git repository...")
-    ShellHelpers.runOrFail("git", { "init" }, projectPath)
+    ShellHelpers.runOrFail("git", { "init", "--initial-branch=main" }, projectPath)
 end
 
 const function updateWallyToml(config: ProjectConfig)
@@ -702,6 +749,19 @@ const function createGithubRepository(config: ProjectConfig)
     })
 end
 
+const function connectExistingRepository(config: ProjectConfig)
+    printStep("Connecting to existing GitHub repository...")
+
+    const fullName = `{config.Owner}/{config.Name}`
+    const protocolOk, protocol = ShellHelpers.run("gh", { "config", "get", "git_protocol" })
+    const remoteUrl = if protocolOk and protocol:match("ssh")
+        then `git@github.com:{fullName}.git`
+        else `https://github.com/{fullName}.git`
+
+    ShellHelpers.runOrFail("git", { "remote", "add", "origin", remoteUrl }, config.ProjectPath)
+    ShellHelpers.runOrFail("git", { "push", "-u", "origin", "main" }, config.ProjectPath)
+end
+
 const function configureRepoSettings(config: ProjectConfig)
     printStep("Configuring repository settings...")
 
@@ -870,7 +930,11 @@ end
 const function setupGithubRepository(config: ProjectConfig): SetupResults
     const warnings: { string } = {}
 
-    createGithubRepository(config)
+    if config.RepoMode == "Existing" then
+        connectExistingRepository(config)
+    else
+        createGithubRepository(config)
+    end
     configureRepoSettings(config)
     createDevBranch(config)
     createReleaseBranch(config)
@@ -929,7 +993,8 @@ const function logProjectCreation(config: ProjectConfig, results: SetupResults?)
                 description = config.Description,
                 owner = config.Owner,
                 projectPath = config.ProjectPath,
-                createGithubRepo = config.CreateGithubRepo,
+                createGithubRepo = config.RepoMode == "New",
+                repoMode = config.RepoMode,
                 isPrivate = config.IsPrivate,
                 isPrivatePackage = config.IsPrivatePackage,
             },
@@ -950,7 +1015,7 @@ const function createProject(config: ProjectConfig)
     setupLocalProject(config)
 
     local results: SetupResults? = nil
-    if config.CreateGithubRepo then
+    if config.RepoMode ~= "None" then
         results = setupGithubRepository(config)
     end
 
@@ -989,6 +1054,10 @@ return Command.new({
             Description = "Create a GitHub repository (skips confirmation prompt).",
         }),
         Flag.new({
+            Name = "existing",
+            Description = "Connect to an existing empty GitHub repository at <owner>/<name>.",
+        }),
+        Flag.new({
             Name = "private",
             Description = "Create a private repository.",
         }),
@@ -1011,7 +1080,7 @@ return Command.new({
         GitHubHelpers.ensureInstalled()
         printHeader()
         const config = gatherProjectConfig(flags)
-        if config.CreateGithubRepo then
+        if config.RepoMode ~= "None" then
             TerraformHelpers.ensureInstalled()
         end
         createProject(config)
