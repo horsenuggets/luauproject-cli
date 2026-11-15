@@ -34,15 +34,17 @@ luauproject new [flags...]
 All flags are optional. Without flags, prompts interactively for project name, description,
 owner, and GitHub options.
 
-| Short | Long            | If not provided   | Description                                      |
-| ----- | --------------- | ----------------- | ------------------------------------------------ |
-| `-n`  | `--name`        | Prompts           | Project name in kebab-case                       |
-| `-d`  | `--description` | Prompts           | Project description (default: "A Luau project.") |
-| `-o`  | `--owner`       | Prompts           | GitHub owner or organization                     |
-| `-p`  | `--path`        | Current directory | Directory to create project in                   |
-|       | `--github`      | Prompts           | Create a GitHub repository (skips confirmation)  |
-|       | `--private`     | Prompts           | Create a private repository (implies `--github`) |
-|       | `--nogithub`    | Prompts           | Skip GitHub repository creation                  |
+| Short | Long               | If not provided | Description                                                 |
+| ----- | ------------------ | --------------- | ----------------------------------------------------------- |
+| `-n`  | `--name`           | Prompts         | Project name in kebab-case                                  |
+| `-d`  | `--description`    | Prompts         | Project description (default: "A Luau project.")            |
+| `-o`  | `--owner`          | Prompts         | GitHub owner or organization (lowercased)                   |
+| `-p`  | `--path`           | Prompts         | Full path for the new project directory                     |
+|       | `--github`         | Prompts         | Create a GitHub repository (skips confirmation)             |
+|       | `--private`        | Prompts         | Create a private repository (implies `--github`)            |
+|       | `--existing`       | Prompts         | Connect to an existing empty repository at `<owner>/<name>` |
+|       | `--nogithub`       | Prompts         | Skip GitHub repository creation                             |
+|       | `--privatepackage` | Prompts         | Make a private package (will not publish to Wally)          |
 
 ## Examples
 
@@ -56,9 +58,12 @@ luauproject new -n my-project -d "A cool package." -o myusername --github
 # Non-interactive mode (private repo)
 luauproject new -n my-project -d "A cool package." -o myusername --private
 
+# Non-interactive mode (existing empty repo at myorg/my-project)
+luauproject new -n my-project -d "A cool package." -o myorg --existing
+
 # Non-interactive mode (no GitHub repo)
 luauproject new -n my-project -d "A cool package." -o myusername --nogithub
 
-# Non-interactive with custom output directory
-luauproject new -n my-project -d "A cool package." -o myusername --nogithub -p ~/projects
+# Non-interactive with custom project directory
+luauproject new -n my-project -d "A cool package." -o myusername --nogithub -p ~/projects/my-project
 ```

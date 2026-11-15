@@ -27,6 +27,7 @@ export type ProjectCreationEntry = {
         owner: string,
         projectPath: string,
         createGithubRepo: boolean,
+        repoMode: string?,
         isPrivate: boolean,
         isPrivatePackage: boolean,
     },
