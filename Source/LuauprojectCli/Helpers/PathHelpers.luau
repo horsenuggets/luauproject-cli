@@ -11,6 +11,9 @@ const process = require("@lune/process")
 
 const IS_WINDOWS = process.os == "windows"
 const NATIVE_SEP = if IS_WINDOWS then "\\" else "/"
+-- Windows accepts both separators, but on Unix a backslash is an ordinary filename
+-- character, so only forward slashes separate path segments there
+const SEP_CLASS = if IS_WINDOWS then "[/\\]" else "/"
 
 const PathHelpers = {}
 
@@ -27,7 +30,7 @@ function PathHelpers.normalize(path: string): string
     assert(type(path) == "string", "path must be a string")
 
     -- Replace all slashes with native separator
-    local normalized = path:gsub("[/\\]", NATIVE_SEP)
+    local normalized = path:gsub(SEP_CLASS, NATIVE_SEP)
 
     -- Remove duplicate separators (but preserve UNC paths on Windows like \\server\share)
     if IS_WINDOWS then
@@ -72,14 +75,14 @@ function PathHelpers.tildify(path: string): string
     end
 
     -- Ensure home uses the same separators as the path and doesn't end with one
-    home = string.gsub(PathHelpers.normalize(home), "[/\\]+$", "")
+    home = string.gsub(PathHelpers.normalize(home), `{SEP_CLASS}+$`, "")
     if home == "" then
         return path
     end
 
     -- Only substitute a whole home directory, not a sibling like "/home/user-backup"
     const nextChar = string.sub(path, #home + 1, #home + 1)
-    if string.sub(path, 1, #home) == home and (nextChar == "" or nextChar == "/" or nextChar == "\\") then
+    if string.sub(path, 1, #home) == home and (nextChar == "" or string.match(nextChar, SEP_CLASS) ~= nil) then
         return "~" .. string.sub(path, #home + 1)
     end
 
@@ -95,7 +98,7 @@ end
 function PathHelpers.trimTrailingSeparators(path: string): string
     assert(type(path) == "string", "path must be a string")
 
-    const trimmed = string.gsub(path, "[/\\]+$", "")
+    const trimmed = string.gsub(path, `{SEP_CLASS}+$`, "")
     if trimmed == path then
         return path
     end
