@@ -664,7 +664,7 @@ const function stripWallyFromReleaseChecks(workflowPath: string)
         return
     end
     local content = fs.readFile(workflowPath)
-    content = removeYamlJobBlock(content, "^%s+wally%-auth:%s*$")
+    content = removeYamlJobBlock(content, "^%s+verify%-wally%-auth:%s*$")
     fs.writeFile(workflowPath, content)
 end
 
@@ -701,8 +701,8 @@ const function copyWorkflows(config: ProjectConfig)
 
     -- Strip Wally-related configuration for private packages
     if config.IsPrivatePackage then
-        stripWallyFromReleaseChecks(`{workflowsTargetDir}/release-checks.yml`)
-        stripWallyFromPublish(`{workflowsTargetDir}/publish.yml`)
+        stripWallyFromReleaseChecks(`{workflowsTargetDir}/release.ci.yml`)
+        stripWallyFromPublish(`{workflowsTargetDir}/release.cd.yml`)
     end
 end
 
