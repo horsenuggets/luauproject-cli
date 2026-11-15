@@ -108,6 +108,27 @@ function GitHubHelpers.getRemoteUrl(fullName: string, protocol: string?): string
 end
 
 --[[
+    Builds the arguments for a `git push` that authenticates HTTPS remotes through the
+    GitHub CLI, the same way `gh auth setup-git` does but without changing the user's Git
+    config. Git doesn't otherwise see the credentials `gh` was logged in with. SSH remotes
+    ignore credential helpers, so this is safe for both protocols.
+]]
+function GitHubHelpers.getPushArgs(branch: string): { string }
+    assert(type(branch) == "string", "branch must be a string")
+
+    return {
+        "-c",
+        "credential.https://github.com.helper=",
+        "-c",
+        "credential.https://github.com.helper=!gh auth git-credential",
+        "push",
+        "-u",
+        "origin",
+        branch,
+    }
+end
+
+--[[
     Returns the Git protocol the GitHub CLI uses for github.com, or nil if it can't be read.
 ]]
 function GitHubHelpers.getGitProtocol(): string?

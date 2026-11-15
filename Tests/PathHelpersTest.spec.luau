@@ -22,8 +22,13 @@ return function()
             expect(PathHelpers.normalize("/a//b///c")).to.equal(native("/a/b/c"))
         end)
 
-        it("should convert mixed separators to the native separator", function()
-            expect(PathHelpers.normalize("a\\b/c\\\\d")).to.equal(native("a/b/c/d"))
+        it("should treat backslashes as separators only on Windows", function()
+            -- On Unix a backslash is an ordinary filename character
+            const expected = if IS_WINDOWS then native("a/b/c/d") else "a\\b/c\\\\d"
+            expect(PathHelpers.normalize("a\\b/c\\\\d")).to.equal(expected)
+            expect(PathHelpers.normalize("/tmp/team\\project")).to.equal(
+                if IS_WINDOWS then native("/tmp/team/project") else "/tmp/team\\project"
+            )
         end)
     end)
 
@@ -38,8 +43,13 @@ return function()
 
         it("should keep the separator on a drive root only on Windows", function()
             const expected = if IS_WINDOWS then `C:{SEP}` else "C:"
-            expect(PathHelpers.trimTrailingSeparators("C:\\")).to.equal(expected)
-            expect(PathHelpers.trimTrailingSeparators("C:\\\\")).to.equal(expected)
+            expect(PathHelpers.trimTrailingSeparators("C:/")).to.equal(expected)
+            expect(PathHelpers.trimTrailingSeparators("C://")).to.equal(expected)
+        end)
+
+        it("should only trim trailing backslashes on Windows", function()
+            const expected = if IS_WINDOWS then "/a/b" else "/a/b\\"
+            expect(PathHelpers.trimTrailingSeparators("/a/b\\")).to.equal(expected)
         end)
 
         it("should leave a drive-relative path unchanged", function()
