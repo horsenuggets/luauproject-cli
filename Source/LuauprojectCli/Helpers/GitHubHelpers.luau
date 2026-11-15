@@ -78,7 +78,9 @@ end
 function GitHubHelpers.parseRepoInfo(json: string): RepoInfo?
     assert(type(json) == "string", "json must be a string")
 
-    const ok, decoded = pcall(serde.decode, "json", json)
+    const ok, decoded = pcall(function()
+        return serde.decode("json", json)
+    end)
     if not ok or type(decoded) ~= "table" then
         return nil
     end
