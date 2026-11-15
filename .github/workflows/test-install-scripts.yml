@@ -1,15 +1,15 @@
-name: Test install scripts
+name: Test Install Scripts
 
 on:
   workflow_run:
-    workflows: ["Publish release"]
+    workflows: ["Release / CD"]
     types:
       - completed
   workflow_dispatch:
 
 jobs:
-  test-install-scripts:
-    name: Test install script on ${{ matrix.os }}
+  test-install-script:
+    name: test-install-script-${{ matrix.os }}
     runs-on: ${{ matrix.runner }}
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     strategy:
