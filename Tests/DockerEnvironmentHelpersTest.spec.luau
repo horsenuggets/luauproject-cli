@@ -7,7 +7,11 @@ results are formatted and reported.
 
 --]]
 
+const Testable = require("@devpackages/Testable")
+
 const DockerEnvironmentHelpers = require("@tests/Helpers/DockerEnvironmentHelpers")
+
+const describe, expect, it = Testable.describe, Testable.expect, Testable.it
 
 const FAILED_RESULT = {
     code = 127,

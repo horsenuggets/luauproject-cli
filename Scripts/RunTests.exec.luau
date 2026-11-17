@@ -74,7 +74,7 @@ function RunTests.exec()
         process.exit(0)
     end
 
-    Testable.configure({ PrintSkipped = true })
+    Testable.configure({ InjectGlobals = false, PrintSkipped = true })
     const _, passed = Testable.run(tests)
     process.exit(if passed then 0 else 1)
 end

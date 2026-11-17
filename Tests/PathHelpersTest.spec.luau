@@ -6,8 +6,12 @@ Tests for path normalization and display formatting.
 
 --]]
 
+const Testable = require("@devpackages/Testable")
+
 const PathHelpers = require("@luauprojectcli/Helpers/PathHelpers")
 const process = require("@lune/process")
+
+const describe, expect, it = Testable.describe, Testable.expect, Testable.it
 
 const IS_WINDOWS = process.os == "windows"
 const SEP = if IS_WINDOWS then "\\" else "/"

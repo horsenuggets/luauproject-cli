@@ -6,8 +6,12 @@ Tests that verify the CLI builds correctly and the built executable works as exp
 
 --]]
 
+const Testable = require("@devpackages/Testable")
+
 const fs = require("@lune/fs")
 const process = require("@lune/process")
+
+const beforeAll, describe, expect, it = Testable.beforeAll, Testable.describe, Testable.expect, Testable.it
 
 return function()
     describe("Build", function()

@@ -9,7 +9,12 @@ source directly via lune.
 
 --]]
 
+const Testable = require("@devpackages/Testable")
+
 const fs = require("@lune/fs")
+
+const afterAll, beforeAll, describe, expect, it, xit =
+    Testable.afterAll, Testable.beforeAll, Testable.describe, Testable.expect, Testable.it, Testable.xit
 
 const DockerEnvironmentHelpers = require("@tests/Helpers/DockerEnvironmentHelpers")
 

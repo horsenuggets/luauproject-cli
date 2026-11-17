@@ -7,7 +7,11 @@ rejects non-empty directories, file conflicts, and validates the --path flag.
 
 --]]
 
+const Testable = require("@devpackages/Testable")
+
 const TestEnvironmentHelpers = require("./Helpers/TestEnvironmentHelpers")
+
+const describe, expect, it = Testable.describe, Testable.expect, Testable.it
 
 const ALL_FLAGS = {
     "--nogithub",
