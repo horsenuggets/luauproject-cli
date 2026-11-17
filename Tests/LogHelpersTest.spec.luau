@@ -7,10 +7,14 @@ directory creation, and handling of missing or nil values.
 
 --]]
 
+const Testable = require("@devpackages/Testable")
+
 const LogHelpers = require("@luauprojectcli/Helpers/LogHelpers")
 const PathHelpers = require("@luauprojectcli/Helpers/PathHelpers")
 const fs = require("@lune/fs")
 const serde = require("@lune/serde")
+
+const describe, expect, it = Testable.describe, Testable.expect, Testable.it
 
 const LOG_FILE_NAME = "project-creations.jsonl"
 

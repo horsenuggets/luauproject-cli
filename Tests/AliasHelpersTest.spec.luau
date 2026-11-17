@@ -7,7 +7,11 @@ which aliases are reserved by the template.
 
 --]]
 
+const Testable = require("@devpackages/Testable")
+
 const AliasHelpers = require("@luauprojectcli/Helpers/AliasHelpers")
+
+const describe, expect, it = Testable.describe, Testable.expect, Testable.it
 
 return function()
     describe("toAliasName", function()

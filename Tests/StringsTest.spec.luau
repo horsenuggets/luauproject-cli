@@ -6,7 +6,11 @@ Tests for the strings helper module including toKebabCase and toPascalCase conve
 
 --]]
 
+const Testable = require("@devpackages/Testable")
+
 const StringHelpers = require("@luauprojectcli/Helpers/StringHelpers")
+
+const describe, expect, it = Testable.describe, Testable.expect, Testable.it
 
 return function()
     describe("toKebabCase", function()

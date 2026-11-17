@@ -7,7 +7,11 @@ stripping for private packages and leaving everything else untouched.
 
 --]]
 
+const Testable = require("@devpackages/Testable")
+
 const WorkflowHelpers = require("@luauprojectcli/Helpers/WorkflowHelpers")
+
+const describe, expect, it = Testable.describe, Testable.expect, Testable.it
 
 const RELEASE_CI = [[
 name: Release / CI

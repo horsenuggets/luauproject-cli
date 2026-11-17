@@ -6,7 +6,11 @@ Tests for shell helper module including command execution and availability check
 
 --]]
 
+const Testable = require("@devpackages/Testable")
+
 const ShellHelpers = require("@luauprojectcli/Helpers/ShellHelpers")
+
+const describe, expect, it = Testable.describe, Testable.expect, Testable.it
 
 return function()
     describe("ShellHelpers.isCommandAvailable", function()

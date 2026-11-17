@@ -7,7 +7,11 @@ environments.
 
 --]]
 
+const Testable = require("@devpackages/Testable")
+
 const TestEnvironmentHelpers = require("@tests/Helpers/TestEnvironmentHelpers")
+
+const describe, expect, it = Testable.describe, Testable.expect, Testable.it
 
 return function()
     describe("TestEnvironmentHelpers", function()

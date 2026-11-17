@@ -7,7 +7,11 @@ repository is set up from flags, and parsing repository info from the GitHub CLI
 
 --]]
 
+const Testable = require("@devpackages/Testable")
+
 const GitHubHelpers = require("@luauprojectcli/Helpers/GitHubHelpers")
+
+const describe, expect, it = Testable.describe, Testable.expect, Testable.it
 
 const function expectedRepoMode(flags: GitHubHelpers.RepoModeFlags): (string?, boolean)
     if flags.NoGithub and (flags.Existing or flags.Github or flags.Private) then
