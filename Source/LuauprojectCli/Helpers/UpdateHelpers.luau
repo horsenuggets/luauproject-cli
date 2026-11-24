@@ -28,12 +28,12 @@ const IS_WINDOWS = process.os == "windows"
 
 export type Asset = {
     name: string,
-    browser_download_url: string,
+    browser_download_url: string
 }
 
 export type Release = {
     tag_name: string,
-    assets: { Asset },
+    assets: { Asset }
 }
 
 ------------------------------------------------------------------------------------------
@@ -71,8 +71,8 @@ function UpdateHelpers.getLatestRelease(): Release?
         url = url,
         headers = {
             ["Accept"] = "application/vnd.github.v3+json",
-            ["User-Agent"] = "luauproject-cli",
-        },
+            ["User-Agent"] = "luauproject-cli"
+        }
     })
 
     if not response.ok then
@@ -103,8 +103,8 @@ function UpdateHelpers.getRelease(version: string): Release?
         url = url,
         headers = {
             ["Accept"] = "application/vnd.github.v3+json",
-            ["User-Agent"] = "luauproject-cli",
-        },
+            ["User-Agent"] = "luauproject-cli"
+        }
     })
 
     if not response.ok then
@@ -151,8 +151,8 @@ function UpdateHelpers.downloadFile(url: string, destPath: string): boolean
     const response = net.request({
         url = url,
         headers = {
-            ["User-Agent"] = "luauproject-cli",
-        },
+            ["User-Agent"] = "luauproject-cli"
+        }
     })
 
     if not response.ok then
@@ -236,7 +236,7 @@ function UpdateHelpers.getInstallPaths(): {
     installDir: string,
     binDir: string,
     versionsDir: string,
-    currentFile: string,
+    currentFile: string
 }
     const homeDir = if IS_WINDOWS then process.env.USERPROFILE else process.env.HOME
     const installDir = PathHelpers.normalize(`{homeDir}/.luauproject-cli`)
@@ -245,7 +245,7 @@ function UpdateHelpers.getInstallPaths(): {
         installDir = installDir,
         binDir = PathHelpers.normalize(`{installDir}/bin`),
         versionsDir = PathHelpers.normalize(`{installDir}/versions`),
-        currentFile = PathHelpers.normalize(`{installDir}/current`),
+        currentFile = PathHelpers.normalize(`{installDir}/current`)
     }
 end
 

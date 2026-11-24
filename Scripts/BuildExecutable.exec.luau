@@ -19,14 +19,14 @@ const BuildExecutable = {}
 function BuildExecutable.exec()
     Toolkit.generateVersion({
         VersionFile = "VERSION",
-        OutputPath = "Source/LuauprojectCli/LuauprojectCommand/__VERSION__.luau",
+        OutputPath = "Source/LuauprojectCli/LuauprojectCommand/__VERSION__.luau"
     })
 
     Toolkit.build({
         Name = "luauproject",
         EntryPoint = "Source/LuauprojectCli",
         OutputDir = process.args[2],
-        Target = process.args[1],
+        Target = process.args[1]
     })
 end
 

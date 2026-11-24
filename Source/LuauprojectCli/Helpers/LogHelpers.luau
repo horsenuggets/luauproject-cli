@@ -29,15 +29,15 @@ export type ProjectCreationEntry = {
         createGithubRepo: boolean,
         repoMode: string?,
         isPrivate: boolean,
-        isPrivatePackage: boolean,
+        isPrivatePackage: boolean
     },
     cwd: string,
     setup: {
         branchProtection: boolean?,
         wallyAuth: boolean?,
-        copilotReview: boolean?,
+        copilotReview: boolean?
     },
-    warnings: { string },
+    warnings: { string }
 }
 
 function LogHelpers.getLogDir(): string
@@ -63,7 +63,7 @@ function LogHelpers.buildEntry(entry: ProjectCreationEntry): string
         cwd = entry.cwd,
         setup = entry.setup,
         timestamp = entry.timestamp,
-        warnings = entry.warnings,
+        warnings = entry.warnings
     }
     return serde.encode("json", data)
 end

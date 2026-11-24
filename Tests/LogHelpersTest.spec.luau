@@ -29,15 +29,15 @@ const function makeSampleEntry(overrides: { [string]: any }?): LogHelpers.Projec
             projectPath = "/tmp/test-project",
             createGithubRepo = true,
             isPrivate = false,
-            isPrivatePackage = false,
+            isPrivatePackage = false
         },
         cwd = "/tmp",
         setup = {
             branchProtection = true,
             wallyAuth = true,
-            copilotReview = true,
+            copilotReview = true
         },
-        warnings = {},
+        warnings = {}
     }
 
     if overrides then
@@ -99,8 +99,8 @@ return function()
                 setup = {
                     branchProtection = nil,
                     wallyAuth = nil,
-                    copilotReview = nil,
-                },
+                    copilotReview = nil
+                }
             })
             const json = LogHelpers.buildEntry(entry)
             const decoded = serde.decode("json", json)
@@ -112,7 +112,7 @@ return function()
 
         it("should include warnings when present", function()
             const entry = makeSampleEntry({
-                warnings = { "Branch protection failed", "Wally token missing" },
+                warnings = { "Branch protection failed", "Wally token missing" }
             })
             const json = LogHelpers.buildEntry(entry)
             const decoded = serde.decode("json", json)
@@ -124,7 +124,7 @@ return function()
 
         it("should include command line args", function()
             const entry = makeSampleEntry({
-                args = { "new", "--nogithub", "-n", "my-lib" },
+                args = { "new", "--nogithub", "-n", "my-lib" }
             })
             const json = LogHelpers.buildEntry(entry)
             const decoded = serde.decode("json", json)
@@ -196,8 +196,8 @@ return function()
                     projectPath = "/tmp/second-project",
                     createGithubRepo = false,
                     isPrivate = false,
-                    isPrivatePackage = false,
-                },
+                    isPrivatePackage = false
+                }
             })
 
             writeEntryToDir(dir, entry1)

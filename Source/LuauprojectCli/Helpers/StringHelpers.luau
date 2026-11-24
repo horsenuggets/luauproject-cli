@@ -14,7 +14,7 @@ end
 
 const TWO_LETTER_EXCEPTIONS: { [string]: boolean } = {
     id = true,
-    my = true,
+    my = true
 }
 
 function StringHelpers.toPascalCase(kebab: string): string

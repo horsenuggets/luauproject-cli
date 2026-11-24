@@ -39,14 +39,14 @@ export type DockerEnv = {
     runCli: (args: { string }?) -> ExecResult,
     runCliFromSource: (args: { string }?) -> ExecResult,
     initGit: () -> (),
-    gitCommit: (message: string) -> (),
+    gitCommit: (message: string) -> ()
 }
 
 export type ExecResult = {
     ok: boolean,
     code: number,
     stdout: string,
-    stderr: string,
+    stderr: string
 }
 
 const function formatOutput(output: string): string
@@ -86,7 +86,7 @@ const function buildExecutable()
         "run",
         "Scripts/BuildExecutable.exec.luau",
         BUILD_TARGET,
-        BUILD_OUTPUT_DIR,
+        BUILD_OUTPUT_DIR
     })
     assert(result.ok, `Failed to build executable. {DockerEnvironmentHelpers.formatExecResult(result)}`)
 end
@@ -104,7 +104,7 @@ const function buildImage()
         DOCKER_IMAGE,
         "-f",
         dockerfilePath,
-        process.cwd,
+        process.cwd
     })
     assert(result.ok, `Failed to build Docker image. {DockerEnvironmentHelpers.formatExecResult(result)}`)
 end
@@ -148,7 +148,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
         CONTAINER_WORK_DIR,
         DOCKER_IMAGE,
         "sleep",
-        "3600",
+        "3600"
     })
 
     assert(startResult.ok, `Failed to start Docker container. {DockerEnvironmentHelpers.formatExecResult(startResult)}`)
@@ -182,7 +182,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
             const result = process.exec("docker", {
                 "cp",
                 tempFile,
-                `{containerId}:{containerPath}`,
+                `{containerId}:{containerPath}`
             })
 
             fs.removeFile(tempFile)
@@ -196,7 +196,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
             const result = process.exec("docker", {
                 "cp",
                 `{containerId}:{containerPath}`,
-                tempFile,
+                tempFile
             })
 
             assert(result.ok, `Failed to read file from container: {result.stderr}`)
@@ -212,7 +212,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
                 containerId,
                 "test",
                 "-f",
-                containerPath,
+                containerPath
             })
             return result.ok
         end,
@@ -223,7 +223,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
                 containerId,
                 "test",
                 "-d",
-                containerPath,
+                containerPath
             })
             return result.ok
         end,
@@ -232,7 +232,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
             const result = process.exec("docker", {
                 "cp",
                 hostPath,
-                `{containerId}:{containerPath}`,
+                `{containerId}:{containerPath}`
             })
             assert(result.ok, `Failed to copy to container: {result.stderr}`)
         end,
@@ -241,7 +241,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
             const result = process.exec("docker", {
                 "cp",
                 `{containerId}:{containerPath}`,
-                hostPath,
+                hostPath
             })
             assert(result.ok, `Failed to copy from container: {result.stderr}`)
         end,
@@ -269,7 +269,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
                 containerId,
                 "lune",
                 "run",
-                "Source/LuauprojectCli",
+                "Source/LuauprojectCli"
             }
             if args then
                 for _, arg in args do
@@ -287,7 +287,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
                 "git",
                 "config",
                 "user.email",
-                "test@test.com",
+                "test@test.com"
             })
             process.exec("docker", {
                 "exec",
@@ -295,7 +295,7 @@ function DockerEnvironmentHelpers.create(): DockerEnv
                 "git",
                 "config",
                 "user.name",
-                "Test User",
+                "Test User"
             })
         end,
 
@@ -308,9 +308,9 @@ function DockerEnvironmentHelpers.create(): DockerEnv
                 "commit",
                 "-m",
                 message,
-                "--allow-empty",
+                "--allow-empty"
             })
-        end,
+        end
     }
 
     return env

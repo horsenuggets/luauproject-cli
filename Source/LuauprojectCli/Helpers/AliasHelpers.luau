@@ -14,7 +14,7 @@ const RESERVED_ALIASES = {
     "lune",
     "packages",
     "submodules",
-    "tests",
+    "tests"
 }
 
 const AliasHelpers = {}

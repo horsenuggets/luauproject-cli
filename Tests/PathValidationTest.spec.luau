@@ -19,7 +19,7 @@ const ALL_FLAGS = {
     "--description",
     "A test project.",
     "--owner",
-    "testowner",
+    "testowner"
 }
 
 const function buildArgs(name: string, path: string): { string }

@@ -37,7 +37,7 @@ ENV PATH="/root/.rokit/bin:${PATH}"
 RUN rokit trust horsenuggets/lune && \
     rokit trust horsenuggets/wally && \
     rokit trust horsenuggets/luau-lsp && \
-    rokit trust johnnymorganz/stylua && \
+    rokit trust horsenuggets/styluau && \
     rokit trust horsenuggets/rojo
 
 # Install the exact tool versions pinned in rokit.toml. Rokit shims resolve versions from

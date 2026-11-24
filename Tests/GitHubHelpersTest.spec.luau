@@ -61,7 +61,7 @@ return function()
                     Existing = bit32.btest(bits, 1),
                     Github = bit32.btest(bits, 2),
                     NoGithub = bit32.btest(bits, 4),
-                    Private = bit32.btest(bits, 8),
+                    Private = bit32.btest(bits, 8)
                 }
                 const mode, err = GitHubHelpers.resolveRepoMode(flags)
                 const expectedMode, expectError = expectedRepoMode(flags)
@@ -77,7 +77,7 @@ return function()
                 Existing = false,
                 Github = false,
                 NoGithub = false,
-                Private = false,
+                Private = false
             })
             expect(mode).to.equal(nil)
             expect(err).to.equal(nil)
@@ -88,7 +88,7 @@ return function()
                 Existing = true,
                 Github = false,
                 NoGithub = false,
-                Private = false,
+                Private = false
             })
             expect(mode).to.equal("Existing")
         end)

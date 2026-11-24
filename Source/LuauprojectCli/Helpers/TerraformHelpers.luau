@@ -32,7 +32,7 @@ const BINARY_NAME = if IS_WINDOWS then "terraform.exe" else "terraform"
 -- Owners not in this table are unsupported.
 const OWNER_CONFIG: { [string]: { file: string, provider: string? } } = {
     horsenuggets = { file = "HorseNuggets.tf", provider = nil },
-    jedfgames = { file = "JedfGames.tf", provider = "github.jedfgames" },
+    jedfgames = { file = "JedfGames.tf", provider = "github.jedfgames" }
 }
 
 ------------------------------------------------------------------------------------------
@@ -52,13 +52,13 @@ function TerraformHelpers.getPlatformString(): string
     const osMap: { [string]: string } = {
         macos = "darwin",
         linux = "linux",
-        windows = "windows",
+        windows = "windows"
     }
 
     const archMap: { [string]: string } = {
         x86_64 = "amd64",
         arm64 = "arm64",
-        aarch64 = "arm64",
+        aarch64 = "arm64"
     }
 
     const tfOs = osMap[os]
@@ -119,8 +119,8 @@ function TerraformHelpers.install(): boolean
     const response = net.request({
         url = url,
         headers = {
-            ["User-Agent"] = "luauproject-cli",
-        },
+            ["User-Agent"] = "luauproject-cli"
+        }
     })
 
     if not response.ok then
@@ -154,7 +154,7 @@ function TerraformHelpers.install(): boolean
     if IS_WINDOWS then
         const result = process.exec("powershell", {
             "-Command",
-            `Expand-Archive -Path '{zipPath}' -DestinationPath '{tempDir}' -Force`,
+            `Expand-Archive -Path '{zipPath}' -DestinationPath '{tempDir}' -Force`
         })
         extractOk = result.ok
     else
@@ -461,13 +461,13 @@ function TerraformHelpers.applyBranchProtection(name: string, owner: string, isP
     const env = {
         GITHUB_TOKEN = token,
         PATH = process.env.PATH,
-        HOME = process.env.HOME,
+        HOME = process.env.HOME
     }
 
     -- Run terraform init
     const initResult = process.exec(terraformBin, { "init" }, {
         cwd = terraformDir,
-        env = env,
+        env = env
     })
 
     if not initResult.ok then
@@ -483,10 +483,10 @@ function TerraformHelpers.applyBranchProtection(name: string, owner: string, isP
     const applyResult = process.exec(terraformBin, {
         "apply",
         "-auto-approve",
-        `-target=module.{name}`,
+        `-target=module.{name}`
     }, {
         cwd = terraformDir,
-        env = env,
+        env = env
     })
 
     if not applyResult.ok then
