@@ -43,7 +43,7 @@ type ProjectConfig = {
     ProjectPath: string,
     RepoMode: GitHubHelpers.RepoMode,
     IsPrivate: boolean,
-    IsPrivatePackage: boolean,
+    IsPrivatePackage: boolean
 }
 
 type SetupResults = {
@@ -51,7 +51,7 @@ type SetupResults = {
     Terraform: boolean?,
     WallyAuth: boolean?,
     CopilotReview: boolean?,
-    Warnings: { string },
+    Warnings: { string }
 }
 
 ------------------------------------------------------------------------------------------
@@ -234,7 +234,7 @@ const function getRepoSetup(flags: any, owner: string, name: string): (GitHubHel
         Existing = flags.existing.Value == true,
         Github = flags.github.Value == true,
         NoGithub = flags.nogithub.Value == true,
-        Private = flags.private.Value == true,
+        Private = flags.private.Value == true
     })
     if flagError then
         stdio.ewrite(Chalk.red(`{flagError}\n`))
@@ -341,7 +341,7 @@ const function gatherProjectConfig(flags: any): ProjectConfig
         ProjectPath = projectPath,
         RepoMode = repoMode,
         IsPrivate = isPrivate,
-        IsPrivatePackage = isPrivatePackage,
+        IsPrivatePackage = isPrivatePackage
     }
 end
 
@@ -385,31 +385,31 @@ const function updateProjectJson(config: ProjectConfig)
     -- default.project.json: update name and source path
     replaceInFile(`{config.ProjectPath}/default.project.json`, {
         { '"luau%-package%-template"', `"{config.Name}"` },
-        { "Source/LuauPackageTemplate", `Source/{config.PascalName}` },
+        { "Source/LuauPackageTemplate", `Source/{config.PascalName}` }
     })
 
     -- dev.project.json: update name with -dev suffix (no source path in new structure)
     replaceInFile(`{config.ProjectPath}/dev.project.json`, {
-        { '"luau%-package%-template%-dev"', `"{config.Name}-dev"` },
+        { '"luau%-package%-template%-dev"', `"{config.Name}-dev"` }
     })
 end
 
 const function updateRootInit(config: ProjectConfig)
     replaceInFile(`{config.ProjectPath}/init.luau`, {
-        { "LuauPackageTemplate", config.PascalName },
+        { "LuauPackageTemplate", config.PascalName }
     })
 end
 
 const function updateReadme(config: ProjectConfig)
     replaceInFile(`{config.ProjectPath}/README.md`, {
         { "# luau%-package%-template", `# {config.Name}` },
-        { "A template for creating Luau packages%.", config.Description },
+        { "A template for creating Luau packages%.", config.Description }
     })
 end
 
 const function updateLicense(config: ProjectConfig)
     replaceInFile(`{config.ProjectPath}/LICENSE`, {
-        { "HorseNuggets", config.Owner },
+        { "HorseNuggets", config.Owner }
     })
 end
 
@@ -422,7 +422,7 @@ const function renameSourceDirectory(config: ProjectConfig)
     end
 
     replaceInFile(`{oldPath}/init.luau`, {
-        { "LuauPackageTemplate", config.PascalName },
+        { "LuauPackageTemplate", config.PascalName }
     })
     fs.move(oldPath, newPath)
 end
@@ -470,7 +470,7 @@ const function updateLuaurc(config: ProjectConfig)
     -- Build JSON manually with 4-space indentation and sorted keys
     const lines = {
         "{",
-        '    "aliases": {',
+        '    "aliases": {'
     }
 
     for i, key in aliasKeys do
@@ -527,7 +527,7 @@ const function parseGitmodules(projectPath: string): { { path: string, url: stri
             if current.path and current.url then
                 table.insert(submodules, {
                     path = current.path,
-                    url = current.url,
+                    url = current.url
                 })
             end
             current = {}
@@ -552,7 +552,7 @@ const function parseGitmodules(projectPath: string): { { path: string, url: stri
     if current.path and current.url then
         table.insert(submodules, {
             path = current.path,
-            url = current.url,
+            url = current.url
         })
     end
 
@@ -577,7 +577,7 @@ const function setupSubmodules(config: ProjectConfig)
             "submodule",
             "add",
             submodule.url,
-            submodule.path,
+            submodule.path
         }, config.ProjectPath)
     end
 end
@@ -644,7 +644,7 @@ const function createGithubRepository(config: ProjectConfig)
         visibility,
         "--source",
         config.ProjectPath,
-        "--push",
+        "--push"
     })
 end
 
@@ -680,7 +680,7 @@ const function configureRepoSettings(config: ProjectConfig)
         "-f",
         "has_projects=false",
         "-f",
-        "has_downloads=false",
+        "has_downloads=false"
     })
 end
 
@@ -744,7 +744,7 @@ const function applyDevBranchProtection(owner: string, name: string): boolean
         "-H",
         "Accept: application/vnd.github+json",
         "--input",
-        tempFile,
+        tempFile
     })
 
     return ok
@@ -783,7 +783,7 @@ const function setupCopilotCodeReview(config: ProjectConfig): boolean
         "-H",
         "Accept: application/vnd.github+json",
         "--input",
-        tempFile,
+        tempFile
     })
 
     if not ok then
@@ -810,7 +810,7 @@ const function setupWallyToken(config: ProjectConfig): boolean
         "--body",
         wallyToken,
         "--repo",
-        `{config.Owner}/{config.Name}`,
+        `{config.Owner}/{config.Name}`
     })
 
     if ok then
@@ -859,7 +859,7 @@ const function setupGithubRepository(config: ProjectConfig): SetupResults
         Terraform = terraformOk,
         WallyAuth = wallyAuthOk,
         CopilotReview = copilotReviewOk,
-        Warnings = warnings,
+        Warnings = warnings
     }
 end
 
@@ -891,16 +891,16 @@ const function logProjectCreation(config: ProjectConfig, results: SetupResults?)
                 createGithubRepo = config.RepoMode == "New",
                 repoMode = config.RepoMode,
                 isPrivate = config.IsPrivate,
-                isPrivatePackage = config.IsPrivatePackage,
+                isPrivatePackage = config.IsPrivatePackage
             },
             cwd = process.cwd,
             setup = {
                 branchProtection = if results then results.BranchProtection else nil,
                 copilotReview = if results then results.CopilotReview else nil,
                 terraform = if results then results.Terraform else nil,
-                wallyAuth = if results then results.WallyAuth else nil,
+                wallyAuth = if results then results.WallyAuth else nil
             },
-            warnings = if results then results.Warnings else {},
+            warnings = if results then results.Warnings else {}
         })
     end)
 end
@@ -930,46 +930,46 @@ return Command.new({
             Name = "name",
             Shorthand = "n",
             Description = "Project name in kebab-case.",
-            Type = "string",
+            Type = "string"
         }),
         Flag.new({
             Name = "description",
             Shorthand = "d",
             Description = "Project description.",
-            Type = "string",
+            Type = "string"
         }),
         Flag.new({
             Name = "owner",
             Shorthand = "o",
             Description = "GitHub owner or organization.",
-            Type = "string",
+            Type = "string"
         }),
         Flag.new({
             Name = "github",
-            Description = "Create a GitHub repository (skips confirmation prompt).",
+            Description = "Create a GitHub repository (skips confirmation prompt)."
         }),
         Flag.new({
             Name = "existing",
-            Description = "Connect to an existing empty GitHub repository at <owner>/<name>.",
+            Description = "Connect to an existing empty GitHub repository at <owner>/<name>."
         }),
         Flag.new({
             Name = "private",
-            Description = "Create a private repository.",
+            Description = "Create a private repository."
         }),
         Flag.new({
             Name = "nogithub",
-            Description = "Skip GitHub repository creation.",
+            Description = "Skip GitHub repository creation."
         }),
         Flag.new({
             Name = "path",
             Shorthand = "p",
             Description = "Full path for the new project directory.",
-            Type = "string",
+            Type = "string"
         }),
         Flag.new({
             Name = "privatepackage",
-            Description = "Make this a private package (will not publish to Wally).",
-        }),
+            Description = "Make this a private package (will not publish to Wally)."
+        })
     },
     Impl = function(_args, flags)
         GitHubHelpers.ensureInstalled()
@@ -979,5 +979,5 @@ return Command.new({
             TerraformHelpers.ensureInstalled()
         end
         createProject(config)
-    end,
+    end
 })

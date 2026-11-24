@@ -22,7 +22,7 @@ function InstallCompletions.exec()
     const LuauprojectCommand = require("@luauprojectcli/LuauprojectCommand")
     Commandline.Toolkit.installCompletions({
         Command = LuauprojectCommand,
-        Shell = process.args[1] or "zsh",
+        Shell = process.args[1] or "zsh"
     })
 end
 

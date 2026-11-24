@@ -72,7 +72,7 @@ jobs:
 const FILES = {
     ["main.ci.yml"] = MAIN_CI,
     ["release.cd.yml"] = RELEASE_CD,
-    ["release.ci.yml"] = RELEASE_CI,
+    ["release.ci.yml"] = RELEASE_CI
 }
 
 return function()

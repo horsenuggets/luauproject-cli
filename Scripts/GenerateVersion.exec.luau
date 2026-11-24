@@ -17,7 +17,7 @@ const GenerateVersion = {}
 function GenerateVersion.exec()
     Toolkit.generateVersion({
         VersionFile = "VERSION",
-        OutputPath = "Source/LuauprojectCli/LuauprojectCommand/__VERSION__.luau",
+        OutputPath = "Source/LuauprojectCli/LuauprojectCommand/__VERSION__.luau"
     })
 end
 

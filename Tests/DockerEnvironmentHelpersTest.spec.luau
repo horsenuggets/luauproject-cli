@@ -17,7 +17,7 @@ const FAILED_RESULT = {
     code = 127,
     ok = false,
     stderr = "lune: command not found\n",
-    stdout = "Creating project...\n",
+    stdout = "Creating project...\n"
 }
 
 return function()
@@ -34,7 +34,7 @@ return function()
                 code = 127,
                 ok = false,
                 stderr = "",
-                stdout = "  \n",
+                stdout = "  \n"
             })
             expect(formatted).to.equal("Exited with code 127.\n\n[stdout]\n(empty)\n\n[stderr]\n(empty)")
         end)

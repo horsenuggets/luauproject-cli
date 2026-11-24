@@ -18,18 +18,18 @@ export type RepoModeFlags = {
     Existing: boolean,
     Github: boolean,
     NoGithub: boolean,
-    Private: boolean,
+    Private: boolean
 }
 
 export type RepoInfo = {
     IsEmpty: boolean,
-    IsPrivate: boolean,
+    IsPrivate: boolean
 }
 
 const REPO_MODE_CHOICES: { { Label: string, Mode: RepoMode } } = {
     { Label = "Create a new repository", Mode = "New" },
     { Label = "Connect to an existing repository", Mode = "Existing" },
-    { Label = "Skip GitHub setup", Mode = "None" },
+    { Label = "Skip GitHub setup", Mode = "None" }
 }
 
 const GitHubHelpers = {}
@@ -89,7 +89,7 @@ function GitHubHelpers.parseRepoInfo(json: string): RepoInfo?
     end
     return {
         IsEmpty = decoded.isEmpty,
-        IsPrivate = decoded.isPrivate,
+        IsPrivate = decoded.isPrivate
     }
 end
 
@@ -124,7 +124,7 @@ function GitHubHelpers.getPushArgs(branch: string): { string }
         "push",
         "-u",
         "origin",
-        branch,
+        branch
     }
 end
 

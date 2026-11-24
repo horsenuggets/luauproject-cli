@@ -46,7 +46,7 @@ export type ExecResult = {
     ok: boolean,
     code: number,
     stdout: string,
-    stderr: string,
+    stderr: string
 }
 
 export type Environment = {
@@ -62,7 +62,7 @@ export type Environment = {
     runCli: (args: { string }?) -> ExecResult,
     initGit: () -> (),
     gitCommit: (message: string) -> (),
-    gitTag: (tag: string) -> (),
+    gitTag: (tag: string) -> ()
 }
 
 function TestEnvironmentHelpers.create(): Environment
@@ -146,7 +146,7 @@ function TestEnvironmentHelpers.create(): Environment
 
         gitTag = function(tag: string)
             process.exec("git", { "tag", tag }, { cwd = tempDir })
-        end,
+        end
     }
 
     return env

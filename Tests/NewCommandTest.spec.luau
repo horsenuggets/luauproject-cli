@@ -22,7 +22,7 @@ const StringHelpers = require("@luauprojectcli/Helpers/StringHelpers")
 
 const ALL_FLAGS = {
     "--nogithub",
-    "--privatepackage",
+    "--privatepackage"
 }
 
 const expectSuccess = DockerEnvironmentHelpers.expectSuccess
@@ -47,7 +47,7 @@ const function buildArgs(
         "--owner",
         owner,
         "--path",
-        projectPath,
+        projectPath
     }
     for _, flag in ALL_FLAGS do
         table.insert(args, flag)
@@ -229,7 +229,7 @@ return function()
 
                     const result = env.exec("bash", {
                         "-c",
-                        "cd /workspace/projects && luauproject new --name test-proj --description Test --owner test-user --nogithub --privatepackage --path /workspace/projects/test-proj",
+                        "cd /workspace/projects && luauproject new --name test-proj --description Test --owner test-user --nogithub --privatepackage --path /workspace/projects/test-proj"
                     })
 
                     expectSuccess(result)
@@ -258,7 +258,7 @@ return function()
 
                     const result = env.exec("bash", {
                         "-c",
-                        "cd /workspace/a/b/c/d/e && luauproject new --name deep-proj --description Test --owner test-user --nogithub --privatepackage --path /workspace/a/b/c/d/e/deep-proj",
+                        "cd /workspace/a/b/c/d/e && luauproject new --name deep-proj --description Test --owner test-user --nogithub --privatepackage --path /workspace/a/b/c/d/e/deep-proj"
                     })
 
                     expectSuccess(result)
@@ -299,7 +299,7 @@ return function()
 
                     const result = env.exec("bash", {
                         "-c",
-                        "which luauproject && luauproject new --name path-proj --description Test --owner test-user --nogithub --privatepackage --path /workspace/path-proj",
+                        "which luauproject && luauproject new --name path-proj --description Test --owner test-user --nogithub --privatepackage --path /workspace/path-proj"
                     })
 
                     expectSuccess(result)
@@ -347,7 +347,7 @@ return function()
                         "--path",
                         `/workspace/{name}`,
                         "--existing",
-                        "--privatepackage",
+                        "--privatepackage"
                     }
                 end
 
@@ -364,7 +364,7 @@ return function()
                         "config",
                         "--global",
                         "url./remotes/test-user/.insteadOf",
-                        "https://github.com/test-user/",
+                        "https://github.com/test-user/"
                     }))
 
                     const result = env.runCli(existingArgs("connected-proj"))
@@ -380,7 +380,7 @@ return function()
                         "-C",
                         "/remotes/test-user/connected-proj.git",
                         "branch",
-                        "--format=%(refname:short)",
+                        "--format=%(refname:short)"
                     })
                     expectSuccess(branches)
                     for _, branch in { "dev", "main", "release" } do

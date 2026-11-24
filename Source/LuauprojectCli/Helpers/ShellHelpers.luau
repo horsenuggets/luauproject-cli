@@ -14,7 +14,7 @@ const ShellHelpers = {}
 
 function ShellHelpers.run(command: string, args: { string }?, cwd: string?): (boolean, string)
     const result = process.exec(command, args or {}, {
-        cwd = cwd,
+        cwd = cwd
     })
 
     if result.ok then

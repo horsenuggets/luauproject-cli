@@ -28,11 +28,11 @@ const UNIT_TESTS = {
     { Name = "PathValidationTest", Func = require("@tests/PathValidationTest.spec") },
     { Name = "StringsTest", Func = require("@tests/StringsTest.spec") },
     { Name = "TestEnvironmentTest", Func = require("@tests/TestEnvironmentTest.spec") },
-    { Name = "WorkflowHelpersTest", Func = require("@tests/WorkflowHelpersTest.spec") },
+    { Name = "WorkflowHelpersTest", Func = require("@tests/WorkflowHelpersTest.spec") }
 }
 
 const DOCKER_TESTS = {
-    { Name = "NewCommandTest", Func = require("@tests/NewCommandTest.spec") },
+    { Name = "NewCommandTest", Func = require("@tests/NewCommandTest.spec") }
 }
 
 const function parseArgs(): { noDocker: boolean, dockerOnly: boolean }

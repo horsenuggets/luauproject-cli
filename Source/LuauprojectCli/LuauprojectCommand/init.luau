@@ -14,7 +14,7 @@ const INSTALL_OPTIONS = {
     Name = "luauproject",
     InstallDir = ".luauproject-cli",
     Version = __VERSION__,
-    Repository = "horsenuggets/luauproject-cli",
+    Repository = "horsenuggets/luauproject-cli"
 }
 
 return Commandline.Command.new({
@@ -24,6 +24,6 @@ return Commandline.Command.new({
     Subcommands = {
         Commandline.Toolkit.installCommand(INSTALL_OPTIONS),
         NewCommand,
-        Commandline.Toolkit.updateCommand(INSTALL_OPTIONS),
-    },
+        Commandline.Toolkit.updateCommand(INSTALL_OPTIONS)
+    }
 })
